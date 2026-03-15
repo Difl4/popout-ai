@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Data (Não enviar datasets gigantes se não for necessário)
+data/generated/*.csv
+
+# IDEs
+.vscode/
+.idea/
