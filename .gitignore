@@ -4,13 +4,20 @@ __pycache__/
 *$py.class
 .venv/
 venv/
+*.egg-info/
+.eggs/
 
 # Jupyter Notebooks
 .ipynb_checkpoints
 
-# Data (Não enviar datasets gigantes se não for necessário)
+# Data
+# We ignore the heavy CSVs but keep the folder structure via __init__.py
 data/generated/*.csv
 
 # IDEs
 .vscode/
 .idea/
+
+# OS files
+.DS_Store
+Thumbs.db
