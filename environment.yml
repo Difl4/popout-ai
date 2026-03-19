@@ -1,0 +1,13 @@
+name: popout-ai
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pandas
+  - matplotlib
+  - notebook
+  - ipykernel
+  - pip
+  - pip:
+    - -e .
