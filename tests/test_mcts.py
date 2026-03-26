@@ -1,0 +1,194 @@
+"""Testes para src/algorithms/mcts — BaseMCTS, StandardUCT, ExperimentalUCT."""
+
+import pytest
+
+from src.engine.bitboard import COLS, ROWS, PopOutBoard
+from src.engine.rules import evaluate_after_move
+from src.algorithms.mcts.base import BaseMCTS, MCTSNode
+from src.algorithms.mcts.uct_standard import StandardUCT
+from src.algorithms.mcts.uct_experimental import ExperimentalUCT
+
+
+# ── MCTSNode ─────────────────────────────────────────────────────────────────
+
+class TestMCTSNode:
+    def test_untried_moves_populated_on_init(self):
+        b = PopOutBoard()
+        node = MCTSNode(state=b)
+        assert len(node.untried_moves) > 0
+        # Tabuleiro vazio: só drops (7 colunas), sem pops
+        assert len(node.untried_moves) == COLS
+
+    def test_is_terminal_false_initially(self):
+        b = PopOutBoard()
+        node = MCTSNode(state=b)
+        assert node.is_terminal is False
+
+    def test_is_terminal_true_when_winner_set(self):
+        b = PopOutBoard()
+        node = MCTSNode(state=b, terminal_winner=1)
+        assert node.is_terminal is True
+
+    def test_q_zero_when_no_visits(self):
+        b = PopOutBoard()
+        node = MCTSNode(state=b)
+        assert node.q() == 0.0
+
+    def test_q_after_updates(self):
+        b = PopOutBoard()
+        node = MCTSNode(state=b)
+        node.visits = 4
+        node.value_sum = 2.0
+        assert node.q() == pytest.approx(0.5)
+
+
+# ── BaseMCTS.run ─────────────────────────────────────────────────────────────
+
+class TestBaseMCTSRun:
+    def test_returns_legal_move_initial_state(self):
+        b = PopOutBoard()
+        mcts = BaseMCTS(seed=42)
+        move = mcts.run(b, iterations=50)
+        assert move[0] in ("drop", "pop")
+        assert 0 <= move[1] < COLS
+
+    def test_returns_legal_move_mid_game(self):
+        b = PopOutBoard()
+        # Simular algumas jogadas
+        b.apply_move(("drop", 3), switch_player=True)
+        b.apply_move(("drop", 3), switch_player=True)
+        b.apply_move(("drop", 0), switch_player=True)
+        mcts = BaseMCTS(seed=123)
+        move = mcts.run(b, iterations=50)
+        legal = b.legal_moves(b.current_player)
+        assert move in legal
+
+    def test_deterministic_with_same_seed(self):
+        b = PopOutBoard()
+        m1 = BaseMCTS(seed=99).run(b, iterations=100)
+        m2 = BaseMCTS(seed=99).run(b, iterations=100)
+        assert m1 == m2
+
+    def test_single_legal_move(self):
+        """Quando só há uma jogada legal, deve devolvê-la."""
+        b = PopOutBoard()
+        # Preencher todas as colunas exceto a 6
+        for c in range(COLS - 1):
+            for _ in range(ROWS):
+                b.apply_drop(c, player=1)
+        # Coluna 6: preencher até restar 1 espaço
+        for _ in range(ROWS - 1):
+            b.apply_drop(COLS - 1, player=2)
+        b.current_player = 1
+        legal = b.legal_moves(1)
+        # Deve haver pelo menos o drop na coluna 6 + possíveis pops
+        mcts = BaseMCTS(seed=42)
+        move = mcts.run(b, iterations=20)
+        assert move in legal
+
+    def test_raises_on_no_legal_moves(self):
+        """Estado sem jogadas legais deve lançar ValueError."""
+        b = PopOutBoard()
+        # Preencher tudo com jogador 2 para que jogador 1 não tenha pops nem drops
+        for c in range(COLS):
+            for _ in range(ROWS):
+                b.apply_drop(c, player=2)
+        b.current_player = 1
+        mcts = BaseMCTS(seed=42)
+        with pytest.raises(ValueError, match="sem jogadas legais"):
+            mcts.run(b, iterations=10)
+
+
+# ── BaseMCTS internal steps ─────────────────────────────────────────────────
+
+class TestMCTSSteps:
+    def test_expand_creates_child(self):
+        b = PopOutBoard()
+        mcts = BaseMCTS(seed=42)
+        root = MCTSNode(state=b)
+        child = mcts.expand(root)
+        assert child is not root
+        assert child.parent is root
+        assert child.move_from_parent is not None
+        assert child.move_from_parent in root.children
+
+    def test_expand_terminal_returns_self(self):
+        b = PopOutBoard()
+        node = MCTSNode(state=b, terminal_winner=1)
+        node.untried_moves = []
+        mcts = BaseMCTS(seed=42)
+        result = mcts.expand(node)
+        assert result is node
+
+    def test_simulate_returns_valid_reward(self):
+        b = PopOutBoard()
+        mcts = BaseMCTS(seed=42)
+        root = MCTSNode(state=b)
+        child = mcts.expand(root)
+        reward = mcts.simulate(child)
+        assert 0.0 <= reward <= 1.0
+
+    def test_backpropagate_updates_visits(self):
+        b = PopOutBoard()
+        mcts = BaseMCTS(seed=42)
+        root = MCTSNode(state=b)
+        child = mcts.expand(root)
+        mcts.backpropagate(child, 1.0)
+        assert child.visits == 1
+        assert root.visits == 1
+        assert child.value_sum == 1.0
+        # Pai recebe reward invertido
+        assert root.value_sum == 0.0
+
+    def test_select_returns_node(self):
+        b = PopOutBoard()
+        mcts = BaseMCTS(seed=42)
+        root = MCTSNode(state=b)
+        selected = mcts.select(root)
+        assert selected is root  # raiz com untried_moves
+
+
+# ── StandardUCT ──────────────────────────────────────────────────────────────
+
+class TestStandardUCT:
+    def test_returns_legal_move(self):
+        b = PopOutBoard()
+        uct = StandardUCT(seed=42)
+        move = uct.run(b, iterations=50)
+        assert move in b.legal_moves(b.current_player)
+
+    def test_inherits_base(self):
+        uct = StandardUCT()
+        assert isinstance(uct, BaseMCTS)
+
+
+# ── ExperimentalUCT ─────────────────────────────────────────────────────────
+
+class TestExperimentalUCT:
+    def test_returns_legal_move(self):
+        b = PopOutBoard()
+        uct = ExperimentalUCT(seed=42)
+        move = uct.run(b, iterations=50)
+        assert move in b.legal_moves(b.current_player)
+
+    def test_inherits_base(self):
+        uct = ExperimentalUCT()
+        assert isinstance(uct, BaseMCTS)
+
+    def test_best_child_prefers_unvisited(self):
+        """ExperimentalUCT deve escolher filhos não visitados primeiro."""
+        b = PopOutBoard()
+        uct = ExperimentalUCT(seed=42)
+        root = MCTSNode(state=b)
+
+        # Expandir dois filhos
+        c1 = uct.expand(root)
+        c2 = uct.expand(root)
+
+        # Marcar c1 como visitado
+        c1.visits = 10
+        c1.value_sum = 5.0
+
+        # c2 não visitado → deve ser escolhido
+        chosen = uct.best_child(root)
+        assert chosen is c2
