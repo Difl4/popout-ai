@@ -118,7 +118,7 @@ def generate_summary(root_dir):
     # First, find all your functions so we can ignore 'max', 'plt', etc.
     first_pass_index_definitions(root_dir)
     
-    output = ["# Project Summary: Music-to-MIDI Research\n"]
+    output = ["# Project Summary:\n"]
     sections = []
     
     for root, dirs, files in os.walk(root_dir):
