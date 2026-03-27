@@ -178,3 +178,263 @@ class TestScore:
         s = clf.score(df, target="play")
         assert isinstance(s, float)
         assert 0.0 <= s <= 1.0
+
+
+# ── Feature Importance ───────────────────────────────────────────────────────
+
+class TestFeatureImportance:
+    def test_importance_before_fit_raises(self):
+        """get_feature_importance() sem fit() deve lançar ValueError."""
+        clf = ID3Classifier()
+        with pytest.raises(ValueError, match="não treinado"):
+            clf.get_feature_importance()
+
+    def test_importance_pure_dataset_empty(self):
+        """Dataset puro (só um label) → árvore é apenas leaf → vazio."""
+        df = _simple_pure_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="label")
+        importance = clf.get_feature_importance()
+        assert importance == {}  # Sem splits → sem features
+
+    def test_importance_returns_dict(self):
+        """get_feature_importance() retorna dict[str, float]."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        importance = clf.get_feature_importance()
+        assert isinstance(importance, dict)
+        assert all(isinstance(k, str) for k in importance.keys())
+        assert all(isinstance(v, float) for v in importance.values())
+
+    def test_importance_all_positive(self):
+        """Todos os scores de importância são positivos."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        importance = clf.get_feature_importance()
+        assert all(v > 0.0 for v in importance.values())
+
+    def test_importance_normalizes_to_one(self):
+        """Soma dos scores de importância ≈ 1.0."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        importance = clf.get_feature_importance()
+        total = sum(importance.values())
+        assert total == pytest.approx(1.0, abs=1e-6)
+
+    def test_importance_sorted_by_count(self):
+        """Features em ordem decrescente de importância."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        importance = clf.get_feature_importance()
+        values = list(importance.values())
+        # Verificar que está em ordem decrescente
+        assert values == sorted(values, reverse=True)
+
+    def test_importance_with_single_split_feature(self):
+        """Feature com um único split contribui menos."""
+        # Dataset simples onde apenas uma feature importa
+        df = pd.DataFrame({
+            "critical": ["a", "a", "b", "b"],
+            "ignored": ["x", "y", "x", "y"],
+            "label": ["yes", "yes", "no", "no"],
+        })
+        clf = ID3Classifier()
+        clf.fit(df, target="label")
+        importance = clf.get_feature_importance()
+        
+        # Verificar que temos importância
+        assert len(importance) > 0
+        
+        # A feature "critical" deve ter importância alta
+        if "critical" in importance:
+            assert importance["critical"] > 0.0
+
+    def test_importance_consistent_across_runs(self):
+        """Importância é determinística (mesmos dados = mesma árvore)."""
+        df = _weather_dataset()
+        
+        clf1 = ID3Classifier()
+        clf1.fit(df, target="play")
+        imp1 = clf1.get_feature_importance()
+        
+        clf2 = ID3Classifier()
+        clf2.fit(df, target="play")
+        imp2 = clf2.get_feature_importance()
+        
+        # Mesmas features
+        assert imp1.keys() == imp2.keys()
+        
+        # Mesmos scores
+        for key in imp1.keys():
+            assert imp1[key] == pytest.approx(imp2[key], abs=1e-6)
+
+    def test_importance_binary_dataset(self):
+        """Importância em dataset binário simples."""
+        df = _simple_binary_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="label")
+        importance = clf.get_feature_importance()
+        
+        # Deve ter importância se a árvore não é trivial
+        if importance:  # Se há splits
+            assert sum(importance.values()) == pytest.approx(1.0, abs=1e-6)
+
+    def test_importance_multifeature(self):
+        """Importância com múltiplas features em jogo."""
+        df = pd.DataFrame({
+            "feat1": ["a", "a", "b", "b", "a", "b"],
+            "feat2": ["x", "y", "x", "y", "y", "x"],
+            "feat3": [1, 2, 1, 2, 1, 2],
+            "label": ["yes", "no", "yes", "no", "yes", "no"],
+        })
+        clf = ID3Classifier()
+        clf.fit(df, target="label")
+        importance = clf.get_feature_importance()
+        
+        # No mínimo uma feature foi usada
+        assert len(importance) >= 1
+        
+        # Normalização
+        assert sum(importance.values()) == pytest.approx(1.0, abs=1e-6)
+
+
+# ── Tree Visualization ───────────────────────────────────────────────────────
+
+class TestTreeVisualization:
+    def test_print_tree_before_fit_raises(self):
+        """print_tree() sem fit should handle gracefully."""
+        clf = ID3Classifier()
+        # print_tree should not raise but print message
+        import io
+        import sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        clf.print_tree()
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        assert "não treinado" in output
+
+    def test_tree_to_string_before_fit(self):
+        """tree_to_string() sem fit retorna mensagem."""
+        clf = ID3Classifier()
+        result = clf.tree_to_string()
+        assert "não treinado" in result
+
+    def test_print_tree_pure_dataset(self):
+        """print_tree com dataset puro (sem splits)."""
+        df = _simple_pure_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="label")
+        
+        import io
+        import sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        clf.print_tree()
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        
+        # Deve conter o target name
+        assert "label" in output
+
+    def test_tree_to_string_pure_dataset(self):
+        """tree_to_string com dataset puro."""
+        df = _simple_pure_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="label")
+        
+        result = clf.tree_to_string()
+        assert "label" in result
+        assert isinstance(result, str)
+
+    def test_print_tree_with_splits(self):
+        """print_tree com árvore que tem splits."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        
+        import io
+        import sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        clf.print_tree()
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        
+        # Deve conter o target e features
+        assert "play" in output
+        assert "→" in output  # Arrow towards leaf labels
+        
+    def test_tree_to_string_with_splits(self):
+        """tree_to_string com múltiplos splits."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        
+        result = clf.tree_to_string()
+        assert isinstance(result, str)
+        assert "play" in result
+        assert "→" in result  # Arrow towards labels
+        assert len(result) > 0
+
+    def test_print_tree_contains_ascii_chars(self):
+        """print_tree usa caracteres ASCII para desenhar árvore."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        
+        import io
+        import sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        clf.print_tree()
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        
+        # Verificar connectors ASCII
+        assert any(c in output for c in ["├", "└", "─"])
+
+    def test_tree_to_string_indentation(self):
+        """tree_to_string mantém indentação apropriada."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        
+        result = clf.tree_to_string()
+        lines = result.split("\n")
+        
+        # Deve ter múltiplas linhas
+        assert len(lines) > 1
+        
+        # Algumas linhas com indentação
+        indented_lines = [l for l in lines if l.startswith((" ", "│", "├", "└"))]
+        assert len(indented_lines) > 0
+
+    def test_tree_visualization_with_binary_feature(self):
+        """Visualização com dataset binário."""
+        df = _simple_binary_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="label")
+        
+        result = clf.tree_to_string()
+        assert "label" in result
+
+    def test_tree_visualization_output_format(self):
+        """Formato da visualização é consistente."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        
+        # Ambos métodos devem produzir outputs relacionados
+        tree_str = clf.tree_to_string()
+        
+        # Verificar que tem labels e estrutura
+        assert "yes" in tree_str or "no" in tree_str
+        assert "play" in tree_str  # Target name deve constar
+        assert "→" in tree_str  # Arrows para leaf labels
+
+

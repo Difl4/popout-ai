@@ -41,7 +41,23 @@ class PopOutBoard:
         return drops + pops
 
     def apply_move(self, move: int) -> None:
-        """Aplica a jogada (0-13) diretamente."""
+        """Aplica a jogada (0-13) diretamente.
+        
+        Args:
+            move (int): Move index (0-6 for drops, 7-13 for pops).
+            
+        Raises:
+            TypeError: If move is not an integer.
+            ValueError: If move is out of range [0, 13].
+        """
+        # Type validation
+        if not isinstance(move, int) or isinstance(move, bool):
+            raise TypeError(f"Move must be integer, got {type(move).__name__}")
+        
+        # Range validation
+        if move < 0 or move > 13:
+            raise ValueError(f"Move must be in range [0, 13], got {move}")
+        
         p = self.current_player
         
         if move < 7:

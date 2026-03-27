@@ -165,7 +165,30 @@ class ID3Classifier:
         Args:
             df (pd.DataFrame): Dataset com features e alvo.
             target (str): Nome da coluna target.
+            
+        Raises:
+            ValueError: Se df é None, vazio, contém NaN ou target não existe.
+            TypeError: Se df não é DataFrame ou target não é string.
         """
+        # Type validation
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError(f"Expected DataFrame, got {type(df).__name__}")
+        if not isinstance(target, str):
+            raise TypeError(f"Expected target name as string, got {type(target).__name__}")
+        
+        # Empty validation
+        if df.empty:
+            raise ValueError("DataFrame is empty")
+        
+        # Target exists validation
+        if target not in df.columns:
+            raise ValueError(f"Target column '{target}' not found in DataFrame. Available columns: {list(df.columns)}")
+        
+        # NaN validation
+        if df.isnull().any().any():
+            nan_cols = df.columns[df.isnull().any()].tolist()
+            raise ValueError(f"DataFrame contains NaN values in columns: {nan_cols}")
+        
         self.target_name = target
         features = [c for c in df.columns if c != target]
         self.root = self.build_tree(df, features, target)
@@ -224,3 +247,144 @@ class ID3Classifier:
         """
         preds = self.predict(df.drop(columns=[target]))
         return float((preds == df[target].astype(str)).mean())
+
+    def _count_feature_usage(self, node: Optional[DecisionNode], counts: Dict[str, int]) -> None:
+        """
+        Conta recursivamente o uso de cada feature na árvore.
+
+        Args:
+            node (Optional[DecisionNode]): Nó atual.
+            counts (Dict[str, int]): Dicionário acumulador de contagens.
+        """
+        if node is None or node.is_leaf():
+            return
+
+        # Contar uso da feature neste nó de decisão
+        if node.feature is not None:
+            counts[node.feature] = counts.get(node.feature, 0) + 1
+
+        # Recursivamente contar em todos os filhos
+        for child in node.children.values():
+            self._count_feature_usage(child, counts)
+
+    def get_feature_importance(self) -> Dict[str, float]:
+        """
+        Calcula importância de cada feature na árvore treinada.
+
+        Returns:
+            Dict[str, float]: Mapa de feature -> importance score (normalizado).
+                            Features não usadas não aparecem no dicionário.
+                            Scores somam a aproximadamente 1.0.
+
+        Raises:
+            ValueError: Se modelo ainda não foi treinado (root é None).
+        """
+        if self.root is None:
+            raise ValueError("Modelo ainda não treinado. Chame fit() primeiro.")
+
+        # Contabilizar uso de cada feature
+        feature_counts: Dict[str, int] = {}
+        self._count_feature_usage(self.root, feature_counts)
+
+        # Se nenhuma feature foi usada (árvore é apenas um leaf)
+        if not feature_counts:
+            return {}
+
+        # Normalizar: dividir cada contagem pela soma total
+        total_splits = sum(feature_counts.values())
+        importance: Dict[str, float] = {
+            feature: count / total_splits
+            for feature, count in sorted(feature_counts.items(), key=lambda x: x[1], reverse=True)
+        }
+
+        return importance
+
+    def print_tree(self, node: Optional[DecisionNode] = None, prefix: str = "", 
+                   value_label: str = "") -> None:
+        """
+        Imprime a árvore de decisão com ASCII art.
+
+        Args:
+            node (Optional[DecisionNode]): Nó atual. Se None, usa root.
+            prefix (str): Prefixo de indentação (uso interno).
+            value_label (str): Rótulo do valor anterior (uso interno).
+        """
+        if node is None:
+            if self.root is None:
+                print("Modelo ainda não treinado.")
+                return
+            print(f"[{self.target_name}]")
+            self.print_tree(self.root, "", "")
+            return
+
+        # Leaf node
+        if node.is_leaf():
+            print(f"{prefix}{value_label} → {node.label}")
+            return
+
+        # Decision node - show feature name at root
+        if value_label:
+            print(f"{prefix}{value_label}")
+
+        # Get children sorted by key
+        children = sorted(node.children.items())
+        for idx, (value, child) in enumerate(children):
+            is_last = idx == len(children) - 1
+            connector = "└─ " if is_last else "├─ "
+            child_prefix = prefix + ("   " if is_last else "│  ")
+
+            if child.is_leaf():
+                label_str = f"{value} → {child.label}"
+                print(f"{prefix}{connector}{label_str}")
+            else:
+                # Show feature name for decision nodes
+                feature_str = f"[{child.feature}]" if child.feature else "?"
+                print(f"{prefix}{connector}{value}")
+                self.print_tree(child, child_prefix, "")
+
+    def tree_to_string(self) -> str:
+        """
+        Converte a árvore para string (alternativa a print_tree).
+
+        Returns:
+            str: Representação em string da árvore.
+        """
+        if self.root is None:
+            return "Modelo ainda não treinado."
+
+        lines = [f"[{self.target_name}]"]
+        self._tree_to_string_recursive(self.root, "", "", lines)
+        return "\n".join(lines)
+
+    def _tree_to_string_recursive(
+        self,
+        node: Optional[DecisionNode],
+        prefix: str,
+        value_label: str,
+        lines: List[str],
+    ) -> None:
+        """Helper recursivo para tree_to_string."""
+        if node is None:
+            return
+
+        if node.is_leaf():
+            line = f"{prefix}{value_label} → {node.label}"
+            lines.append(line)
+            return
+
+        if value_label:
+            lines.append(f"{prefix}{value_label}")
+
+        children = sorted(node.children.items())
+        for idx, (value, child) in enumerate(children):
+            is_last = idx == len(children) - 1
+            connector = "└─ " if is_last else "├─ "
+            child_prefix = prefix + ("   " if is_last else "│  ")
+
+            if child.is_leaf():
+                line = f"{prefix}{connector}{value} → {child.label}"
+                lines.append(line)
+            else:
+                line = f"{prefix}{connector}{value}"
+                lines.append(line)
+                self._tree_to_string_recursive(child, child_prefix, "", lines)

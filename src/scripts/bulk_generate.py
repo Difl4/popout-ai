@@ -27,13 +27,21 @@ def make_agent(variant: str, seed: int | None = None):
 
     Raises:
         ValueError: Se variante for desconhecida.
+        TypeError: Se variant não é string ou seed não é int/None.
     """
+    # Type validation
+    if not isinstance(variant, str):
+        raise TypeError(f"variant must be string, got {type(variant).__name__}")
+    if seed is not None and not isinstance(seed, int):
+        raise TypeError(f"seed must be int or None, got {type(seed).__name__}")
+    
+    # Valid variant validation
     mapping: dict[str, Type] = {
         "uct_standard": StandardUCT,
         "uct_experimental": ExperimentalUCT,
     }
     if variant not in mapping:
-        raise ValueError(f"Variante desconhecida: {variant}")
+        raise ValueError(f"Variante desconhecida: {variant}. Opções: {list(mapping.keys())}")
     return mapping[variant](seed=seed)
 
 
@@ -47,7 +55,21 @@ def randomize_state(steps: int, rng: random.Random) -> PopOutBoard:
 
     Returns:
         PopOutBoard: Estado resultante.
+        
+    Raises:
+        TypeError: If steps is not int or rng is not random.Random.
+        ValueError: If steps is negative.
     """
+    # Type validation
+    if not isinstance(steps, int) or isinstance(steps, bool):
+        raise TypeError(f"steps must be int, got {type(steps).__name__}")
+    if not isinstance(rng, random.Random):
+        raise TypeError(f"rng must be random.Random, got {type(rng).__name__}")
+    
+    # Value validation
+    if steps < 0:
+        raise ValueError(f"steps must be non-negative, got {steps}")
+    
     board = PopOutBoard()
     for _ in range(steps):
         legal = board.legal_moves()
@@ -75,7 +97,29 @@ def generate_dataset(
 
     Returns:
         pd.DataFrame: Dataset com features do estado e rótulo da jogada.
+        
+    Raises:
+        TypeError: If parameters have wrong types.
+        ValueError: If parameters are out of valid ranges.
     """
+    # Type validation
+    if not isinstance(variant, str):
+        raise TypeError(f"variant must be string, got {type(variant).__name__}")
+    if not isinstance(n_samples, int) or isinstance(n_samples, bool):
+        raise TypeError(f"n_samples must be int, got {type(n_samples).__name__}")
+    if not isinstance(iterations, int) or isinstance(iterations, bool):
+        raise TypeError(f"iterations must be int, got {type(iterations).__name__}")
+    if not isinstance(seed, int) or isinstance(seed, bool):
+        raise TypeError(f"seed must be int, got {type(seed).__name__}")
+    
+    # Value validation
+    if n_samples <= 0:
+        raise ValueError(f"n_samples must be positive, got {n_samples}")
+    if iterations <= 0:
+        raise ValueError(f"iterations must be positive, got {iterations}")
+    if seed < 0:
+        raise ValueError(f"seed must be non-negative, got {seed}")
+    
     rng = random.Random(seed)
     agent = make_agent(variant, seed=seed)
 
