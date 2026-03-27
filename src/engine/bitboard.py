@@ -114,3 +114,26 @@ class PopOutBoard:
             res.append(" ".join(line))
         res.append("0 1 2 3 4 5 6")
         return "\n".join(res)
+
+    def __eq__(self, other: object) -> bool:
+        """Comparar dois boards por estado.
+        
+        Args:
+            other: Outro objeto para comparar.
+            
+        Returns:
+            bool: True se boards têm mesmo estado.
+        """
+        if not isinstance(other, PopOutBoard):
+            return False
+        return (self.mask_p1 == other.mask_p1 and 
+                self.mask_p2 == other.mask_p2 and
+                self.current_player == other.current_player)
+
+    def __hash__(self) -> int:
+        """Hash do estado do board para usar em sets/dicts.
+        
+        Returns:
+            int: Hash do estado combinado.
+        """
+        return hash((self.mask_p1, self.mask_p2, self.current_player))
