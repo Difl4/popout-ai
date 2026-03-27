@@ -12,5 +12,6 @@ dependencies:
   - pytest-cov
   - pip
   - pygame
+  - numba
   - pip:
     - -e .

@@ -2,10 +2,40 @@
 
 ## Directory: Root
 ### File: `PopOut_Solution.ipynb`
-  - Empty notebook.
+  - Cell 1:
+    - Markdown Hint: Setup e Imports...
+  - Cell 2:
+    - Markdown Hint: 1. Demonstração do Game Engine (Bitboard)...
+    - Code Hint (Internal): PopOutBoard, legal_moves
+  - Cell 3:
+    - Code Hint (Internal): PopOutBoard, apply_move, evaluate_after_move
+  - Cell 4:
+    - Markdown Hint: 2. MCTS - Monte Carlo Tree Search...
+    - Code Hint (Internal): PopOutBoard, StandardUCT, run
+  - Cell 5:
+    - Markdown Hint: 3. ID3 Classifier - Árvore de Decisão...
+    - Code Hint (Internal): ID3Classifier, fit, generate_dataset, predict, score
+  - Cell 6:
+    - Markdown Hint: 4. Comparação de Performance: MCTS vs ID3...
+    - Code Hint (Internal): PopOutBoard, StandardUCT, predict, run
+
+### File: `play.py`
+  - Contains helper logic/imports.
 ## Directory: src
 ### File: `__init__.py`
   - Contains helper logic/imports.
+
+### File: `game_state.py`
+  - Class: `GameState`
+  - Class: `GameSaveManager`
+    - Method: `__init__()`  | Inicializa manager de save.
+    - Method: `save_path()`  | Retorna caminho completo do arquivo de save.
+    - Method: `has_save()`  | Verifica se existe um save guardado.
+    - Method: `save_game()`  | Guarda estado de jogo em arquivo.
+    - Method: `load_game()`  | Carrega estado de jogo de arquivo.
+    - Method: `delete_save()`  | Apaga arquivo de save.
+    - Method: `list_saves()`  | Lista todos os arquivos de save disponíveis.
+    - Method: `get_save_info()`  | Obtém informações sobre o save (sem carregar completo).
 ## Directory: src/algorithms
 ### File: `__init__.py`
   - Contains helper logic/imports.
@@ -36,17 +66,39 @@
 
 ### File: `base.py`
   - Class: `MCTSNode`
-    - Method: `__post_init__()`  | Inicializa lista de jogadas não testadas para o estado atual.
-    - Method: `is_terminal()`  | Indica se o nó representa um estado terminal conhecido.
-    - Method: `q()`  | Valor médio do nó.
+    - Method: `__post_init__()` 
+    - Method: `is_terminal()` 
+    - Method: `q()` 
   - Class: `BaseMCTS`
-    - Method: `__init__()`  | Inicializa hiperparâmetros do MCTS.
-    - Method: `best_child()`  | Seleciona filho pelo critério UCT.
-    - Method: `select()`  | Fase de seleção: desce pela árvore até nó expansível/terminal.
-    - Method: `expand()`  | Fase de expansão: cria um novo filho a partir de jogada não explorada.
-    - Method: `simulate()`  | Fase de simulação (rollout) a partir do nó.
-    - Method: `backpropagate()`  | Fase de retropropagação: atualiza estatísticas até à raiz.
-    - Method: `run()`  | Executa iterações MCTS e devolve a melhor jogada por visitas.
+    - Method: `__init__()` 
+    - Method: `best_child()` 
+    - Method: `select()` 
+    - Method: `expand()` 
+    - Method: `simulate()` 
+    - Method: `backpropagate()` 
+    - Method: `run()` 
+
+### File: `numba_mcts.py`
+  - Function: `nb_has_won()`  | 4-in-a-row check via bitwise shifts. Identical logic to rules.has_won.
+  - Function: `nb_legal_moves()`  | Returns (moves_array, n) where moves_array[:n] are the legal move ints.
+  - Function: `nb_apply_move()`  | Applies move (0-13) to (mask_p1, mask_p2, current_player).
+  - Function: `nb_evaluate_after_move()`  | Mirrors rules.evaluate_after_move — PopOut tiebreak rule included.
+  - Function: `nb_is_full()` 
+  - Function: `nb_expand_step()`  | Apply a move, evaluate for a winner, and compute the new legal moves —
+  - Function: `nb_simulate()`  | Full random rollout in pure int64 arithmetic.
+  - Class: `_NumbaNode`
+    - Method: `__post_init__()` 
+  - Class: `NumbaMCTS`
+    - Method: `__init__()` 
+    - Method: `best_child()` 
+    - Method: `expand()` 
+    - Method: `simulate()` 
+  - Function: `_nb_best_child_id()`  | UCT child selection on flat arrays. Returns child node id.
+  - Function: `nb_mcts_run()`  | Complete MCTS loop in Numba — select, expand, simulate, backpropagate.
+  - Class: `FlatNumbaMCTS`
+    - Method: `__init__()` 
+    - Method: `run()`  | Return the best move integer (0-13) for the given board state.
+  - Function: `warmup()`  | Run a dummy search to force Numba to compile all @njit functions.
 
 ### File: `uct_experimental.py`
   - Class: `ExperimentalUCT`
@@ -61,33 +113,54 @@
 
 ### File: `bitboard.py`
   - Class: `PopOutBoard`
-    - Method: `clone()`  | Cria uma cópia profunda do estado atual.
-    - Method: `legal_drop_moves()`  | Lista colunas válidas para jogada de drop.
-    - Method: `legal_pop_moves()`  | Lista colunas válidas para jogada pop do jogador.
-    - Method: `legal_moves()`  | Lista todas as jogadas legais (drop e pop).
-    - Method: `apply_drop()`  | Executa uma jogada drop numa coluna.
-    - Method: `apply_pop()`  | Executa uma jogada pop removendo a peça da base da coluna.
-    - Method: `apply_move()`  | Aplica uma jogada genérica ('drop' ou 'pop').
-    - Method: `is_full()`  | Verifica se o tabuleiro está cheio (sem drops possíveis).
-    - Method: `to_feature_dict()`  | Converte o estado em dicionário de features para ID3.
-    - Method: `__str__()`  | Representação textual do tabuleiro.
+    - Method: `clone()` 
+    - Method: `merged_mask()` 
+    - Method: `legal_moves()`  | Gera jogadas como inteiros:
+    - Method: `apply_move()`  | Aplica a jogada (0-13) diretamente.
+    - Method: `is_full()` 
+    - Method: `to_feature_dict()`  | Converte o estado do tabuleiro em dicionário de features para ML.
+    - Method: `__str__()` 
+    - Method: `__eq__()`  | Comparar dois boards por estado.
+    - Method: `__hash__()`  | Hash do estado do board para usar em sets/dicts.
 
 ### File: `rules.py`
-  - Function: `check_winner_for_player()`  | Verifica se um jogador tem 4-em-linha no estado atual.
-  - Function: `evaluate_after_move()`  | Resolve resultado após uma jogada, considerando regra de conflito.
-  - Function: `board_signature()`  | Gera assinatura imutável para deteção de repetição de estado.
+  - Function: `has_won()`  | Checks for 4-in-a-row using bitwise shifts (Connect 4 logic).
+  - Function: `check_winner_for_player()`  | Verifica se o jogador especificado venceu.
+  - Function: `evaluate_after_move()`  | Resolve resultado após uma jogada.
+  - Function: `board_signature()`  | Assinatura única imutável para o estado do tabuleiro.
   - Function: `is_threefold_repetition()`  | Verifica empate por repetição tripla de estado.
-  - Function: `is_draw()`  | Verifica condições de empate.
+  - Function: `is_draw()`  | Verifica condições de empate (cheio ou repetição).
 ## Directory: src/interfaces
 ### File: `__init__.py`
   - Contains helper logic/imports.
 
 ### File: `cli.py`
-  - Function: `parse_move()`  | Converte texto do utilizador para formato de jogada.
-  - Function: `run_cli_game()`  | Corre um jogo humano (P1) vs MCTS (P2) em terminal.
+  - Function: `parse_move()`  | Converte d<col> ou p<col> no formato inteiro do motor (0-13).
+  - Function: `decode_move()`  | Converte o inteiro do motor de volta para texto legível.
+  - Function: `check_and_print_winner()`  | Verifica se há vencedor após uma jogada e imprime o resultado.
+  - Function: `run_cli_game()` 
 
 ### File: `gui.py`
-  - Function: `launch_gui()`  | Lança uma GUI placeholder para demonstração.
+  - Class: `AnimationState`
+    - Method: `__init__()`  | Inicializa estado de animação vazio.
+    - Method: `add_piece_animation()`  | Inicia animação de entrada para uma peça.
+    - Method: `update()`  | Atualiza todas as animações.
+  - Class: `Difficulty`
+  - Class: `PauseMenu`
+    - Method: `__init__()`  | Inicializa menu de pausa.
+    - Method: `toggle_pause()`  | Alterna estado de pausa.
+    - Method: `navigate()`  | Navega menu com setas (up/down).
+    - Method: `select_current()`  | Retorna a opção selecionada (para processamento).
+  - Function: `_draw_pause_menu()`  | Desenha menu de pausa com opções navegáveis.
+  - Function: `_player_color()`  | Devolve a cor base associada ao jogador.
+  - Function: `_player_glow()`  | Devolve a cor de glow (brilho) do jogador.
+  - Function: `_draw_vertical_gradient()`  | Desenha um gradiente vertical no fundo com mais qualidade.
+  - Function: `_draw_glow_circle()`  | Desenha uma aura de brilho ao redor de um círculo.
+  - Function: `_draw_disc()`  | Desenha uma peça com sombra, brilho e animação de chegada.
+  - Function: `_draw_board()`  | Desenha tabuleiro com animações, HUD superior/inferior, preview, hover e overlay final.
+  - Function: `_column_from_mouse()`  | Converte coordenada X do rato para coluna 0..6, ou None fora do tabuleiro.
+  - Function: `_encode_move()`  | Codifica jogada no formato do motor: drop(0..6) ou pop(7..13).
+  - Function: `launch_gui()`  | Inicia a janela pygame com interface melhorada e executa o ciclo principal.
 ## Directory: src/scripts
 ### File: `__init__.py`
   - Contains helper logic/imports.
@@ -102,43 +175,17 @@
   - Contains helper logic/imports.
 
 ### File: `test_bitboard.py`
-  - Function: `_fill_column()`  | Preenche *count* células de uma coluna com peças do jogador.
+  - Function: `_get_cell()`  | Lê célula: row 0 é o fundo, row 5 é o topo.
   - Class: `TestDrop`
     - Method: `test_drop_empty_column()` 
     - Method: `test_drop_stacks_pieces()` 
-    - Method: `test_drop_full_column_returns_false()` 
-    - Method: `test_drop_invalid_column_negative()` 
-    - Method: `test_drop_invalid_column_too_large()` 
+    - Method: `test_is_full_detection()` 
   - Class: `TestPop`
-    - Method: `test_pop_own_piece()` 
-    - Method: `test_pop_opponent_piece_returns_false()` 
-    - Method: `test_pop_empty_column_returns_false()` 
-    - Method: `test_pop_invalid_column()` 
-    - Method: `test_gravity_after_pop()`  | Após pop, todas as peças acima descem uma posição.
+    - Method: `test_pop_removes_bottom()` 
+    - Method: `test_gravity_after_pop()` 
   - Class: `TestLegalMoves`
-    - Method: `test_legal_drop_moves_initial()` 
-    - Method: `test_legal_drop_moves_full_column_excluded()` 
-    - Method: `test_legal_pop_moves_empty_board()` 
-    - Method: `test_legal_pop_moves_with_own_pieces()` 
-    - Method: `test_legal_moves_combines_drop_and_pop()` 
-    - Method: `test_legal_moves_uses_current_player_default()` 
-  - Class: `TestApplyMove`
-    - Method: `test_apply_move_drop_switches_player()` 
-    - Method: `test_apply_move_pop_switches_player()` 
-    - Method: `test_apply_move_no_switch()` 
-    - Method: `test_apply_move_invalid_returns_false()` 
-  - Class: `TestClone`
-    - Method: `test_clone_is_independent()` 
-    - Method: `test_clone_preserves_state()` 
-  - Class: `TestIsFull`
-    - Method: `test_empty_board_not_full()` 
-    - Method: `test_full_board()` 
-  - Class: `TestFeatureDict`
-    - Method: `test_feature_dict_keys()` 
-    - Method: `test_feature_dict_values_empty()` 
-  - Class: `TestStr`
-    - Method: `test_str_contains_column_numbers()` 
-    - Method: `test_str_shows_pieces()` 
+    - Method: `test_legal_moves_initial()` 
+    - Method: `test_legal_moves_pop_inclusion()` 
 
 ### File: `test_bulk_generate.py`
   - Class: `TestMakeAgent`
@@ -180,7 +227,7 @@
     - Method: `test_basic_bins()` 
     - Method: `test_bins_are_sorted()` 
     - Method: `test_multiple_columns()` 
-    - Method: `test_constant_column_no_bins()`  | Coluna constante → quantis iguais → set vazio ou mínimo.
+    - Method: `test_constant_column_no_bins()`  | Coluna constante → quantis iguais → set pode ter um valor.
   - Class: `TestApplyBins`
     - Method: `test_applies_labels()` 
     - Method: `test_does_not_modify_original()` 
@@ -189,6 +236,79 @@
   - Class: `TestRoundTrip`
     - Method: `test_discretize_then_id3()`  | Fluxo completo: dados numéricos → discretizar → treinar ID3 → prever.
     - Method: `test_predict_after_discretize()`  | Prever uma nova observação após discretização.
+
+### File: `test_game_state.py`
+  - Class: `TestGameState`
+    - Method: `test_game_state_creation()`  | Deve criar estado de jogo válido.
+    - Method: `test_game_state_defaults()`  | Deve usar valores padrão para campos opcionais.
+  - Class: `TestGameSaveManager`
+    - Method: `temp_save_dir()`  | Cria diretório temporário para saves.
+    - Method: `test_manager_creation()`  | Deve criar manager com diretório de save.
+    - Method: `test_save_path_property()`  | Deve retornar caminho completo de save.
+    - Method: `test_has_save_initially_false()`  | Não deve ter save inicialmente.
+    - Method: `test_save_and_load_game()`  | Deve guardar e carregar jogo com sucesso.
+    - Method: `test_load_game_none_when_no_save()`  | Deve retornar None se não houver save.
+    - Method: `test_delete_save()`  | Deve apagar arquivo de save.
+    - Method: `test_list_saves()`  | Deve listar todos os saves disponíveis.
+    - Method: `test_get_save_info()`  | Deve retornar informações sobre save sem carregar completo.
+    - Method: `test_get_save_info_none_when_no_save()`  | Deve retornar None quando não há save.
+    - Method: `test_board_serialization()`  | PopOutBoard deve ser serializável com pickle.
+
+### File: `test_gui.py`
+  - Class: `TestPlayerColor`
+    - Method: `test_player1_color()`  | Player 1 deve retornar cor vermelha.
+    - Method: `test_player2_color()`  | Player 2 deve retornar cor amarela.
+    - Method: `test_invalid_player_returns_p2()`  | Jogador inválido retorna cor default (P2).
+  - Class: `TestPlayerGlow`
+    - Method: `test_player1_glow()`  | Player 1 glow deve ser vermelho brilhante.
+    - Method: `test_player2_glow()`  | Player 2 glow deve ser amarelo brilhante.
+  - Class: `TestColumnFromMouse`
+    - Method: `test_column0_at_left_edge()`  | X=0 deve retornar coluna 0.
+    - Method: `test_column3_at_middle()`  | Meio do board deve retornar coluna 3.
+    - Method: `test_column6_at_right_edge()`  | Coluna 6 no limite direito.
+    - Method: `test_out_of_bounds_left()`  | X negativo retorna None.
+    - Method: `test_out_of_bounds_right()`  | X fora do board retorna None.
+    - Method: `test_exact_boundary_cases()`  | Testa limites exatos entre colunas.
+  - Class: `TestEncodeMove`
+    - Method: `test_drop_mode_column0()`  | Mode DROP, coluna 0 = move 0.
+    - Method: `test_drop_mode_column6()`  | Mode DROP, coluna 6 = move 6.
+    - Method: `test_pop_mode_column0()`  | Mode POP, coluna 0 = move 7 (7 + 0).
+    - Method: `test_pop_mode_column6()`  | Mode POP, coluna 6 = move 13 (7 + 6).
+    - Method: `test_symmetric_encoding()`  | Testa simetria DROP/POP para todas as colunas.
+  - Class: `TestAnimationState`
+    - Method: `test_animation_state_creation()`  | AnimationState deve ser criado vazio.
+    - Method: `test_add_piece_animation()`  | Adicionar animação de peça.
+    - Method: `test_animation_update_progress()`  | Animação deve progredir com tempo.
+    - Method: `test_animation_completion()`  | Animação deve ser removida quando 100% completa.
+    - Method: `test_multiple_animations()`  | Deve gerenciar múltiplas animações.
+  - Class: `TestDrawFunctions`
+    - Method: `test_draw_vertical_gradient()`  | Gradiente deve desenhar linhas do topo ao fundo.
+    - Method: `test_draw_glow_circle()`  | Glow circle deve desenhar múltiplos círculos.
+  - Function: `test_launch_gui_initialization()`  | Teste que launch_gui inicializa pygame corretamente.
+  - Class: `TestGuiConstants`
+    - Method: `test_cell_size_is_positive()`  | CELL_SIZE deve ser positivo.
+    - Method: `test_board_dimensions()`  | Dimensões do board devem ser válidas.
+    - Method: `test_window_dimensions()`  | Dimensões da janela devem conter o board.
+    - Method: `test_colors_are_tuples()`  | Cores devem ser tuplas RGB ou RGBA.
+    - Method: `test_colors_valid_rgb_values()`  | Valores de cor devem estar entre 0-255.
+  - Class: `TestGuiIntegration`
+    - Method: `test_encode_decode_roundtrip()`  | Encoding DROP então POP deve voltar ao original.
+    - Method: `test_mouse_to_column_to_move()`  | Pipeline: mouse X -> coluna -> move.
+  - Class: `TestDifficulty`
+    - Method: `test_difficulty_easy()`  | Dificuldade Easy = 100 iterações.
+    - Method: `test_difficulty_medium()`  | Dificuldade Medium = 500 iterações.
+    - Method: `test_difficulty_hard()`  | Dificuldade Hard = 1000 iterações.
+    - Method: `test_difficulty_extreme()`  | Dificuldade Extreme = 2000 iterações.
+  - Class: `TestPauseMenu`
+    - Method: `test_pause_menu_creation()`  | PauseMenu deve inicializar desativado.
+    - Method: `test_pause_menu_toggle()`  | Deve alternar estado de pausa.
+    - Method: `test_pause_menu_navigate_down()`  | Deve navegar para baixo nas opções.
+    - Method: `test_pause_menu_navigate_up()`  | Deve navegar para cima nas opções.
+    - Method: `test_pause_menu_navigate_wrap_around()`  | Deve fazer wrap-around ao navegar além dos limites.
+    - Method: `test_pause_menu_select_current()`  | Deve retornar opção selecionada correta.
+    - Method: `test_pause_menu_reset_on_toggle()`  | Deve resetar opção para "Retomar" ao pausar.
+  - Class: `TestDrawPauseMenu`
+    - Method: `test_draw_pause_menu_renders()`  | Menu de pausa deve renderizar sem erros.
 
 ### File: `test_id3.py`
   - Function: `_weather_dataset()`  | Dataset clássico 'play tennis' para testes categóricos.
@@ -218,6 +338,28 @@
   - Class: `TestScore`
     - Method: `test_score_returns_float()` 
 
+### File: `test_integration.py`
+  - Class: `TestFullMCTSGameFlow`
+    - Method: `test_mcts_plays_complete_game()`  | MCTS deve conseguir jogar um jogo completo sem erros.
+    - Method: `test_mcts_deterministic_with_seed()`  | MCTS com mesmo seed deve produzir mesmo resultado.
+  - Class: `TestID3TrainingPipeline`
+    - Method: `test_dataset_generation_and_training()`  | Deve gerar dataset e treinar ID3 com sucesso.
+    - Method: `test_id3_predictions_are_valid()`  | Predições ID3 devem ser labels válidas do dataset.
+  - Class: `TestBoardStateEquality`
+    - Method: `test_board_equality()`  | Boards com mesmo estado devem ser iguais.
+    - Method: `test_board_inequality_after_move()`  | Boards divergentes devem ser diferentes.
+    - Method: `test_board_hashable()`  | Board deve ser hashable e usável em sets/dicts.
+    - Method: `test_board_hash_consistency()`  | Hash do mesmo board deve ser sempre igual.
+  - Class: `TestGameFlowWithDifferentModes`
+    - Method: `test_pvp_game_flow()`  | Simula um jogo Player vs Player.
+    - Method: `test_pvai_game_flow()`  | Simula Player vs AI com clima de gameplay real.
+  - Class: `TestBulkDatasetGeneration`
+    - Method: `test_generate_multiple_samples_different_seeds()`  | Datasets com seeds diferentes devem conter amostras diferentes.
+    - Method: `test_dataset_structure_consistency()`  | Dataset deve ter estrutura consistente.
+  - Class: `TestEndToEndPipeline`
+    - Method: `test_complete_pipeline()`  | Executa pipeline completo com sucesso.
+    - Method: `test_pipeline_with_different_mcts_variants()`  | Validar que pipeline funciona com diferentes variantes de MCTS.
+
 ### File: `test_mcts.py`
   - Class: `TestMCTSNode`
     - Method: `test_untried_moves_populated_on_init()` 
@@ -246,8 +388,8 @@
     - Method: `test_best_child_prefers_unvisited()`  | ExperimentalUCT deve escolher filhos não visitados primeiro.
 
 ### File: `test_rules.py`
-  - Function: `_set_cell()`  | Define diretamente uma célula (atalho para testes).
-  - Function: `_make_board_with()`  | Cria tabuleiro com células específicas preenchidas: [(row, col, player), ...].
+  - Function: `_set_cell()`  | Define diretamente uma célula no bitboard.
+  - Function: `_make_board_with()` 
   - Class: `TestHorizontalWin`
     - Method: `test_horizontal_bottom_row()` 
     - Method: `test_horizontal_middle_row()` 
@@ -282,55 +424,89 @@
 ---
 ## 📊 Internal Research Logic Frequency
 Functions you wrote, sorted by how often they are used in this project:
-* `PopOutBoard`: 60 calls
-* `apply_drop`: 30 calls
-* `check_winner_for_player`: 16 calls
+* `PopOutBoard`: 68 calls
+* `apply_move`: 39 calls
+* `legal_moves`: 20 calls
+* `run`: 18 calls
+* `generate_dataset`: 16 calls
+* `ID3Classifier`: 16 calls
 * `parse_move`: 15 calls
+* `evaluate_after_move`: 14 calls
+* `check_winner_for_player`: 14 calls
+* `fit`: 13 calls
 * `MCTSNode`: 13 calls
-* `apply_move`: 12 calls
+* `GameSaveManager`: 12 calls
 * `_make_board_with`: 12 calls
-* `ID3Classifier`: 11 calls
-* `BaseMCTS`: 11 calls
-* `legal_moves`: 10 calls
-* `run`: 10 calls
-* `evaluate_after_move`: 9 calls
+* `StandardUCT`: 10 calls
+* `_column_from_mouse`: 10 calls
+* `BaseMCTS`: 10 calls
+* `GameState`: 9 calls
+* `AnimationState`: 9 calls
+* `PauseMenu`: 9 calls
+* `add_piece_animation`: 9 calls
+* `toggle_pause`: 9 calls
+* `_encode_move`: 9 calls
 * `board_signature`: 8 calls
-* `generate_dataset`: 8 calls
-* `fit`: 8 calls
+* `_get_cell`: 8 calls
+* `score`: 7 calls
+* `save_game`: 7 calls
 * `expand`: 7 calls
-* `apply_pop`: 7 calls
+* `navigate`: 7 calls
 * `apply_bins`: 7 calls
+* `predict`: 6 calls
 * `entropy`: 6 calls
 * `DecisionNode`: 6 calls
+* `_player_color`: 6 calls
 * `fit_quantile_bins`: 6 calls
 * `_weather_dataset`: 6 calls
-* `clone`: 5 calls
+* `load_game`: 5 calls
+* `predict_one`: 5 calls
+* `is_full`: 5 calls
+* `select_current`: 5 calls
 * `randomize_state`: 5 calls
 * `is_leaf`: 4 calls
-* `is_draw`: 4 calls
-* `legal_pop_moves`: 4 calls
+* `nb_legal_moves`: 4 calls
 * `is_threefold_repetition`: 4 calls
+* `update`: 4 calls
 * `make_agent`: 4 calls
-* `predict_one`: 4 calls
+* `get_save_info`: 3 calls
 * `information_gain`: 3 calls
+* `clone`: 3 calls
 * `best_child`: 3 calls
 * `q`: 3 calls
-* `legal_drop_moves`: 3 calls
-* `is_full`: 3 calls
-* `StandardUCT`: 3 calls
-* `to_feature_dict`: 3 calls
-* `score`: 3 calls
+* `nb_apply_move`: 3 calls
+* `nb_evaluate_after_move`: 3 calls
+* `has_won`: 3 calls
+* `_draw_glow_circle`: 3 calls
+* `_draw_disc`: 3 calls
 * `ExperimentalUCT`: 3 calls
 * `_set_cell`: 3 calls
+* `is_draw`: 3 calls
+* `launch_gui`: 2 calls
 * `majority_class`: 2 calls
 * `build_tree`: 2 calls
-* `predict`: 2 calls
 * `select`: 2 calls
 * `simulate`: 2 calls
 * `backpropagate`: 2 calls
-* `__init__`: 1 calls
+* `nb_has_won`: 2 calls
+* `__init__`: 2 calls
+* `nb_simulate`: 2 calls
+* `check_and_print_winner`: 2 calls
+* `_draw_vertical_gradient`: 2 calls
+* `_draw_pause_menu`: 2 calls
+* `_player_glow`: 2 calls
+* `nb_is_full`: 1 calls
+* `nb_expand_step`: 1 calls
+* `_NumbaNode`: 1 calls
+* `_nb_best_child_id`: 1 calls
+* `nb_mcts_run`: 1 calls
+* `NumbaMCTS`: 1 calls
+* `FlatNumbaMCTS`: 1 calls
 * `run_cli_game`: 1 calls
-* `launch_gui`: 1 calls
+* `decode_move`: 1 calls
+* `_draw_board`: 1 calls
 * `main`: 1 calls
-* `_fill_column`: 1 calls
+* `to_feature_dict`: 1 calls
+* `delete_save`: 1 calls
+* `list_saves`: 1 calls
 * `_simple_pure_dataset`: 1 calls

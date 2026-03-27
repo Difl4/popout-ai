@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import random
 from pathlib import Path
-from typing import Type
 
 import pandas as pd
 
@@ -19,29 +18,25 @@ def make_agent(variant: str, seed: int | None = None):
     Cria agente MCTS conforme variante pedida.
 
     Args:
-        variant (str): Nome da variante ('uct_standard' ou 'uct_experimental').
+        variant (str): Nome da variante.
+            'uct_standard'     — Python MCTS padrão.
+            'uct_experimental' — Python MCTS experimental.
+            'numba'            — NumbaMCTS (Numba simulate).
+            'flat_numba'       — FlatNumbaMCTS (loop inteiro em Numba, mais rápido).
         seed (int | None): Semente opcional.
 
     Returns:
-        BaseMCTS: Instância de agente MCTS.
+        MCTSEngine: Instância de agente MCTS.
 
     Raises:
         ValueError: Se variante for desconhecida.
-        TypeError: Se variant não é string ou seed não é int/None.
     """
-    # Type validation
-    if not isinstance(variant, str):
-        raise TypeError(f"variant must be string, got {type(variant).__name__}")
-    if seed is not None and not isinstance(seed, int):
-        raise TypeError(f"seed must be int or None, got {type(seed).__name__}")
-    
-    # Valid variant validation
     mapping: dict[str, Type] = {
         "uct_standard": StandardUCT,
         "uct_experimental": ExperimentalUCT,
     }
     if variant not in mapping:
-        raise ValueError(f"Variante desconhecida: {variant}. Opções: {list(mapping.keys())}")
+        raise ValueError(f"Variante desconhecida: {variant}")
     return mapping[variant](seed=seed)
 
 

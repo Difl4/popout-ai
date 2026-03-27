@@ -9,6 +9,8 @@ from enum import Enum
 from pathlib import Path
 
 from ..algorithms.mcts.uct_standard import StandardUCT
+from ..algorithms.mcts.numba_mcts import FlatNumbaMCTS, warmup
+from ..algorithms.mcts.protocol import MCTSEngine
 from ..engine.bitboard import COLS, ROWS, PopOutBoard
 from ..engine.rules import evaluate_after_move
 
@@ -100,10 +102,23 @@ COLOR_HOVER = (150, 230, 255, 100)
 # Menu de Pausa e Dificuldade
 class Difficulty(Enum):
     """Níveis de dificuldade para IA."""
-    EASY = (100, "Fácil (100)")
-    MEDIUM = (500, "Médio (500)")
-    HARD = (1000, "Difícil (1000)")
-    EXTREME = (2000, "Extremo (2000)")
+    EASY         = (100,    "Fácil (100)",         "standard")
+    MEDIUM       = (500,    "Médio (500)",          "standard")
+    HARD         = (1000,   "Difícil (1000)",       "standard")
+    EXTREME      = (2000,   "Extremo (2000)",       "standard")
+    EXTREME_NUMBA= (50_000, "Extremo Numba (50k)",  "flat_numba")
+
+    @property
+    def iterations(self) -> int:
+        return self.value[0]
+
+    @property
+    def label(self) -> str:
+        return self.value[1]
+
+    @property
+    def engine_type(self) -> str:
+        return self.value[2]
 
 
 class PauseMenu:
@@ -500,6 +515,18 @@ def _encode_move(column: int, mode_pop: bool) -> int:
         int: Move codificado (0-13).
     """
     return column + 7 if mode_pop else column
+
+
+def _make_ai_engine(difficulty: Difficulty) -> MCTSEngine:
+    """Instantiate the correct AI engine for the given difficulty level.
+
+    Calling warmup() when switching to a Numba-based engine ensures JIT
+    compilation happens at difficulty-change time (not mid-game).
+    """
+    if difficulty.engine_type == "flat_numba":
+        warmup()
+        return FlatNumbaMCTS()
+    return StandardUCT(seed=42)
 
 
 def launch_gui() -> None:
