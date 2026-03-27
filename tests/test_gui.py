@@ -346,7 +346,7 @@ class TestPauseMenu:
         assert not menu.is_paused
         assert menu.selected_option == 0
         assert menu.selected_difficulty == Difficulty.MEDIUM
-        assert len(menu.options) == 4
+        assert len(menu.options) == 5
     
     def test_pause_menu_toggle(self):
         """Deve alternar estado de pausa."""
@@ -388,8 +388,8 @@ class TestPauseMenu:
         from src.interfaces.gui import PauseMenu
         menu = PauseMenu()
         menu.toggle_pause()
-        menu.selected_option = 3
-        
+        menu.selected_option = 4
+
         menu.navigate(1)
         assert menu.selected_option == 0  # Volta ao início
     
@@ -405,6 +405,8 @@ class TestPauseMenu:
         menu.selected_option = 2
         assert menu.select_current() == "Dificuldade"
         menu.selected_option = 3
+        assert menu.select_current() == "Modo"
+        menu.selected_option = 4
         assert menu.select_current() == "Sair"
     
     def test_pause_menu_reset_on_toggle(self):
@@ -421,24 +423,26 @@ class TestPauseMenu:
 class TestDrawPauseMenu:
     """Testa renderização do menu de pausa."""
     
+    @patch('pygame.draw.line')
     @patch('pygame.draw.rect')
-    def test_draw_pause_menu_renders(self, mock_rect):
+    def test_draw_pause_menu_renders(self, mock_rect, mock_line):
         """Menu de pausa deve renderizar sem erros."""
         from src.interfaces.gui import PauseMenu, _draw_pause_menu
         from unittest.mock import MagicMock
-        
+
         menu = PauseMenu()
         menu.toggle_pause()
-        
+
         mock_screen = MagicMock()
         mock_font = MagicMock()
         mock_small_font = MagicMock()
-        
-        # Simula render de texto
-        mock_font.render.return_value = MagicMock()
-        mock_small_font.render.return_value = MagicMock()
-        
-        # Não deve lançar exceção
+
+        # Simula render de texto com get_width
+        text_surf = MagicMock()
+        text_surf.get_width.return_value = 100
+        mock_font.render.return_value = text_surf
+        mock_small_font.render.return_value = text_surf
+
         try:
             _draw_pause_menu(mock_screen, mock_font, mock_small_font, menu)
         except Exception as e:

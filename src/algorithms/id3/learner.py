@@ -42,10 +42,21 @@ class ID3Classifier:
     Classificador ID3 para atributos categóricos.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, max_depth: Optional[int] = None) -> None:
         """
         Inicializa classificador sem árvore treinada.
+
+        Args:
+            max_depth (Optional[int]): Profundidade máxima da árvore.
+                Se None, cresce até esgotarem os atributos ou amostras.
+                Limitar a profundidade reduz overfitting.
         """
+        if max_depth is not None:
+            if not isinstance(max_depth, int) or isinstance(max_depth, bool):
+                raise TypeError(f"max_depth deve ser int ou None, recebeu {type(max_depth).__name__}")
+            if max_depth < 1:
+                raise ValueError(f"max_depth deve ser >= 1, recebeu {max_depth}")
+        self.max_depth: Optional[int] = max_depth
         self.root: Optional[DecisionNode] = None
         self.target_name: Optional[str] = None
 
@@ -100,7 +111,13 @@ class ID3Classifier:
         """
         return str(labels.value_counts().idxmax())
 
-    def build_tree(self, df: pd.DataFrame, features: List[str], target: str) -> DecisionNode:
+    def build_tree(
+        self,
+        df: pd.DataFrame,
+        features: List[str],
+        target: str,
+        depth: int = 0,
+    ) -> DecisionNode:
         """
         Constrói árvore ID3 recursivamente.
 
@@ -108,10 +125,11 @@ class ID3Classifier:
             df (pd.DataFrame): Subconjunto de treino.
             features (list[str]): Atributos disponíveis.
             target (str): Nome da classe.
+            depth (int): Profundidade atual (uso interno).
 
         Returns:
             DecisionNode: Nó raiz do subproblema.
-            
+
         OTIMIZAÇÃO: Early stopping se encontrar feature com ganho muito elevado.
         """
         node = DecisionNode()
@@ -126,26 +144,31 @@ class ID3Classifier:
             node.label = node.majority_label
             return node
 
+        # Parar se atingiu profundidade máxima
+        if self.max_depth is not None and depth >= self.max_depth:
+            node.label = node.majority_label
+            return node
+
         gains = {}
         best_gain = -1.0
         best_feature = None
-        
+
         # OTIMIZAÇÃO: Early stopping se encontrar feature com ganho muito bom
         for f in features:
             gain = self.information_gain(df, f, target)
             gains[f] = gain
-            
+
             if gain > best_gain:
                 best_gain = gain
                 best_feature = f
-            
+
             # Early stopping: se ganho é próximo do máximo teórico, para
             if best_gain > 0.95:
                 break
-        
+
         if best_feature is None:
             best_feature = features[0]
-        
+
         node.feature = best_feature
         remaining = [f for f in features if f != best_feature]
 
@@ -154,7 +177,7 @@ class ID3Classifier:
                 leaf = DecisionNode(label=node.majority_label, majority_label=node.majority_label)
                 node.children[str(val)] = leaf
             else:
-                node.children[str(val)] = self.build_tree(subset, remaining, target)
+                node.children[str(val)] = self.build_tree(subset, remaining, target, depth + 1)
 
         return node
 
@@ -191,7 +214,7 @@ class ID3Classifier:
         
         self.target_name = target
         features = [c for c in df.columns if c != target]
-        self.root = self.build_tree(df, features, target)
+        self.root = self.build_tree(df, features, target, depth=0)
 
     def predict_one(self, row: pd.Series) -> str:
         """
