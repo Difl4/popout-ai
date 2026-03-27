@@ -122,41 +122,23 @@ class Difficulty(Enum):
 
 
 class PauseMenu:
-    """Gerencia estado do menu de pausa.
-    
-    Attributes:
-        is_paused (bool): Se o jogo está pausado.
-        selected_option (int): Índice da opção selecionada (0-3).
-        selected_difficulty (Difficulty): Dificuldade selecionada.
-    """
+    """Gerencia estado do menu de pausa."""
     def __init__(self) -> None:
-        """Inicializa menu de pausa."""
         self.is_paused = False
-        self.selected_option = 0  # 0: Resume, 1: New Game, 2: Difficulty, 3: Quit
+        self.selected_option = 0
         self.selected_difficulty = Difficulty.MEDIUM
-        self.options = ["Retomar", "Novo Jogo", "Dificuldade", "Sair"]
-    
+        self.options = ["Retomar", "Novo Jogo", "Dificuldade", "Modo", "Sair"]
+
     def toggle_pause(self) -> None:
-        """Alterna estado de pausa."""
         self.is_paused = not self.is_paused
         if self.is_paused:
-            self.selected_option = 0  # Reset para "Retomar"
-    
+            self.selected_option = 0
+
     def navigate(self, direction: int) -> None:
-        """Navega menu com setas (up/down).
-        
-        Args:
-            direction (int): -1 para cima, +1 para baixo.
-        """
         if self.is_paused:
             self.selected_option = (self.selected_option + direction) % len(self.options)
-    
+
     def select_current(self) -> str:
-        """Retorna a opção selecionada (para processamento).
-        
-        Returns:
-            str: Nome da opção selecionada.
-        """
         return self.options[self.selected_option]
 
 
@@ -165,56 +147,73 @@ def _draw_pause_menu(
     font: pygame.font.Font,
     small_font: pygame.font.Font,
     pause_menu: PauseMenu,
+    game_mode: str = "PvP",
 ) -> None:
-    """Desenha menu de pausa com opções navegáveis.
-    
-    Args:
-        screen (pygame.Surface): Superfície pygame.
-        font (pygame.font.Font): Fonte principal.
-        small_font (pygame.font.Font): Fonte pequena.
-        pause_menu (PauseMenu): Estado do menu.
-    """
+    """Desenha menu de pausa com opcoes navegaveis."""
     # Overlay escuro
     overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
-    overlay.fill(COLOR_OVERLAY)
+    overlay.fill((0, 0, 0, 200))
     screen.blit(overlay, (0, 0))
-    
+
     # Box do menu
-    menu_width = 400
-    menu_height = 350
-    menu_x = (WINDOW_WIDTH - menu_width) // 2
-    menu_y = (WINDOW_HEIGHT - menu_height) // 2
-    
-    menu_box = pygame.Rect(menu_x, menu_y, menu_width, menu_height)
-    pygame.draw.rect(screen, COLOR_PANEL, menu_box, border_radius=20)
-    pygame.draw.rect(screen, COLOR_ACCENT, menu_box, width=3, border_radius=20)
-    
-    # Título
-    pause_title = font.render("PAUSADO", True, COLOR_ACCENT_LIGHT)
-    screen.blit(pause_title, (menu_x + menu_width // 2 - pause_title.get_width() // 2, menu_y + 20))
-    
-    # Opções do menu
-    option_spacing = 60
-    start_y = menu_y + 80
-    
+    menu_w, menu_h = 420, 420
+    mx = (WINDOW_WIDTH - menu_w) // 2
+    my = (WINDOW_HEIGHT - menu_h) // 2
+
+    # Sombra do menu
+    shadow = pygame.Rect(mx + 6, my + 6, menu_w, menu_h)
+    pygame.draw.rect(screen, (0, 0, 0, 100), shadow, border_radius=24)
+
+    menu_box = pygame.Rect(mx, my, menu_w, menu_h)
+    pygame.draw.rect(screen, (18, 28, 58), menu_box, border_radius=24)
+    pygame.draw.rect(screen, COLOR_ACCENT, menu_box, width=2, border_radius=24)
+
+    # Titulo com linha decorativa
+    title = font.render("PAUSA", True, COLOR_ACCENT_LIGHT)
+    tx = mx + menu_w // 2 - title.get_width() // 2
+    screen.blit(title, (tx, my + 20))
+    line_y = my + 60
+    pygame.draw.line(screen, COLOR_PANEL_BORDER, (mx + 30, line_y), (mx + menu_w - 30, line_y), 1)
+
+    # Opcoes com detalhes contextuais
+    option_h = 48
+    start_y = my + 75
+    details = {
+        "Dificuldade": pause_menu.selected_difficulty.label,
+        "Modo": game_mode,
+    }
+
     for i, option in enumerate(pause_menu.options):
-        is_selected = (i == pause_menu.selected_option)
-        color = COLOR_ACCENT if is_selected else COLOR_TEXT_MUTED
-        
-        # Fundo da opção selecionada
-        if is_selected:
-            option_bg = pygame.Rect(menu_x + 20, start_y + i * option_spacing - 10, menu_width - 40, 40)
-            pygame.draw.rect(screen, COLOR_PANEL_LIGHT, option_bg, border_radius=8)
-            pygame.draw.rect(screen, COLOR_ACCENT, option_bg, width=2, border_radius=8)
-        
-        # Texto da opção
-        option_text = "→ " + option if is_selected else "  " + option
-        option_surf = small_font.render(option_text, True, color)
-        screen.blit(option_surf, (menu_x + 30, start_y + i * option_spacing))
-    
-    # Instrções no fundo
-    hint = small_font.render("↑↓ Navegar | ENTER Selecionar | ESC Retomar", True, COLOR_TEXT_MUTED)
-    screen.blit(hint, (menu_x + menu_width // 2 - hint.get_width() // 2, menu_y + menu_height - 40))
+        is_sel = i == pause_menu.selected_option
+        oy = start_y + i * option_h
+
+        if is_sel:
+            bg = pygame.Rect(mx + 16, oy, menu_w - 32, option_h - 6)
+            pygame.draw.rect(screen, (30, 50, 100), bg, border_radius=10)
+            pygame.draw.rect(screen, COLOR_ACCENT, bg, width=2, border_radius=10)
+
+        color = COLOR_TEXT if is_sel else COLOR_TEXT_MUTED
+        prefix = "> " if is_sel else "  "
+        label_surf = small_font.render(prefix + option, True, color)
+        screen.blit(label_surf, (mx + 30, oy + 10))
+
+        # Valor atual ao lado (dificuldade / modo)
+        if option in details:
+            detail_color = COLOR_ACCENT if is_sel else COLOR_TEXT_MUTED
+            detail_surf = small_font.render(details[option], True, detail_color)
+            screen.blit(detail_surf, (mx + menu_w - 30 - detail_surf.get_width(), oy + 10))
+
+    # Linha decorativa inferior
+    line_y2 = start_y + len(pause_menu.options) * option_h + 5
+    pygame.draw.line(screen, COLOR_PANEL_BORDER, (mx + 30, line_y2), (mx + menu_w - 30, line_y2), 1)
+
+    # Controlos
+    hints = [
+        small_font.render("Setas para navegar | ENTER selecionar", True, COLOR_TEXT_MUTED),
+        small_font.render("ESC para retomar", True, COLOR_TEXT_MUTED),
+    ]
+    for j, h in enumerate(hints):
+        screen.blit(h, (mx + menu_w // 2 - h.get_width() // 2, line_y2 + 12 + j * 24))
 
 
 def _player_color(player: int) -> tuple[int, int, int]:
@@ -336,6 +335,10 @@ def _draw_board(
     board: PopOutBoard,
     font: pygame.font.Font,
     small_font: pygame.font.Font,
+    bold_24: pygame.font.Font,
+    bold_48: pygame.font.Font,
+    font_18: pygame.font.Font,
+    font_18_bold: pygame.font.Font,
     mode_pop: bool,
     message: str,
     hover_col: int | None,
@@ -391,17 +394,23 @@ def _draw_board(
                 if glow > 0:
                     _draw_glow_circle(screen, (cx, cy), radius, COLOR_ACCENT, glow)
 
-    # Preview de peça na coluna hover
+    # Preview na coluna hover
     if hover_col is not None and not game_over:
         preview_color = COLOR_P2 if board.current_player == 2 else COLOR_P1
         preview_hi = COLOR_P2_HI if board.current_player == 2 else COLOR_P1_HI
         px = hover_col * CELL_SIZE + CELL_SIZE // 2
         py = HUD_TOP_HEIGHT // 2 + 6
-        _draw_disc(screen, (px, py), radius - 8, preview_color, preview_hi, glow_intensity=0.4)
-        
-        # Rótulo "PRÓXIMA JOGADA"
-        preview_label = small_font.render("PRÓXIMA", True, COLOR_ACCENT_LIGHT)
-        screen.blit(preview_label, (px - preview_label.get_width() // 2, py - radius + 5))
+        if mode_pop:
+            # Modo POP: seta para baixo em vez de peça
+            pts = [(px - 14, py - 8), (px + 14, py - 8), (px, py + 10)]
+            pygame.draw.polygon(screen, preview_color, pts)
+            label = small_font.render("POP", True, preview_color)
+            screen.blit(label, (px - label.get_width() // 2, py - 26))
+        else:
+            # Modo DROP: peça normal
+            _draw_disc(screen, (px, py), radius - 8, preview_color, preview_hi, glow_intensity=0.4)
+            label = small_font.render("DROP", True, COLOR_ACCENT_LIGHT)
+            screen.blit(label, (px - label.get_width() // 2, py - radius + 5))
 
     # === HUD SUPERIOR ===
     title = font.render("POPOUT", True, COLOR_TEXT)
@@ -409,17 +418,27 @@ def _draw_board(
     screen.blit(title_shadow, (17, 15))
     screen.blit(title, (14, 12))
 
-    # Badge: Mode (DROP/POP)
+    # Badge: Mode (DROP/POP) — cor de fundo muda para distinguir visualmente
     mode_text = "POP" if mode_pop else "DROP"
     mode_color = COLOR_P2 if mode_pop else COLOR_ACCENT
+    mode_bg = (60, 40, 15) if mode_pop else COLOR_PANEL_LIGHT
     mode_badge = pygame.Rect(WINDOW_WIDTH - 340, 12, 156, 46)
-    pygame.draw.rect(screen, COLOR_PANEL_LIGHT, mode_badge, border_radius=12)
-    pygame.draw.rect(screen, COLOR_PANEL_BORDER, mode_badge, width=2, border_radius=12)
-    
+    pygame.draw.rect(screen, mode_bg, mode_badge, border_radius=12)
+    pygame.draw.rect(screen, mode_color, mode_badge, width=2, border_radius=12)
+
     mode_label = small_font.render("JOGADA", True, COLOR_TEXT_MUTED)
-    mode_value = pygame.font.SysFont("arial", 24, bold=True).render(mode_text, True, mode_color)
+    mode_value = bold_24.render(mode_text, True, mode_color)
     screen.blit(mode_label, (mode_badge.x + 12, mode_badge.y + 4))
     screen.blit(mode_value, (mode_badge.x + 12, mode_badge.y + 24))
+
+    # Setas na base das colunas quando em modo POP
+    if mode_pop and not game_over:
+        arrow_y = board_y + BOARD_HEIGHT - 8
+        for c in range(COLS):
+            ax = c * CELL_SIZE + CELL_SIZE // 2
+            # Triangulo apontando para baixo
+            pts = [(ax - 8, arrow_y), (ax + 8, arrow_y), (ax, arrow_y + 12)]
+            pygame.draw.polygon(screen, COLOR_P2, pts)
 
     # Badge: Game Mode  (PvP/IA)
     game_mode_badge = pygame.Rect(WINDOW_WIDTH - 170, 12, 156, 46)
@@ -427,7 +446,7 @@ def _draw_board(
     pygame.draw.rect(screen, COLOR_PANEL_BORDER, game_mode_badge, width=2, border_radius=12)
     
     game_mode_label = small_font.render("MODO", True, COLOR_TEXT_MUTED)
-    game_mode_value = pygame.font.SysFont("arial", 24, bold=True).render(game_mode, True, COLOR_ACCENT)
+    game_mode_value = bold_24.render(game_mode, True, COLOR_ACCENT)
     screen.blit(game_mode_label, (game_mode_badge.x + 12, game_mode_badge.y + 4))
     screen.blit(game_mode_value, (game_mode_badge.x + 12, game_mode_badge.y + 24))
 
@@ -442,7 +461,7 @@ def _draw_board(
     player_title = f"Jogador Atual: "
     
     title_surf = font.render(player_title, True, COLOR_TEXT)
-    value_surf = pygame.font.SysFont("arial", 32, bold=True).render(player_label, True, player_color)
+    value_surf = font.render(player_label, True, player_color)
     
     screen.blit(title_surf, (20, bottom_panel.y + 10))
     screen.blit(value_surf, (20 + title_surf.get_width() + 10, bottom_panel.y + 6))
@@ -461,12 +480,12 @@ def _draw_board(
     # Mensagem de feedback
     if message:
         msg_color = COLOR_ERROR if "inválida" in message.lower() else COLOR_ACCENT_LIGHT
-        msg_surface = pygame.font.SysFont("arial", 18).render(message, True, msg_color)
+        msg_surface = font_18.render(message, True, msg_color)
         screen.blit(msg_surface, (20, bottom_panel.y + 78))
 
     # Índices das colunas (0-6)
     for c in range(COLS):
-        txt = pygame.font.SysFont("arial", 18, bold=True).render(str(c), True, COLOR_TEXT)
+        txt = font_18_bold.render(str(c), True, COLOR_TEXT)
         tx = c * CELL_SIZE + CELL_SIZE // 2 - txt.get_width() // 2
         ty = HUD_TOP_HEIGHT + BOARD_HEIGHT + 4
         screen.blit(txt, (tx, ty))
@@ -479,11 +498,15 @@ def _draw_board(
 
         box = pygame.Rect(50, WINDOW_HEIGHT // 2 - 100, WINDOW_WIDTH - 100, 200)
         pygame.draw.rect(screen, COLOR_PANEL, box, border_radius=20)
-        pygame.draw.rect(screen, _player_color(winner), box, width=4, border_radius=20)
+        box_color = _player_color(winner) if winner else COLOR_ACCENT
+        pygame.draw.rect(screen, box_color, box, width=4, border_radius=20)
 
-        end_title = pygame.font.SysFont("arial", 48, bold=True).render(
-            f"JOGADOR {winner} VENCEU!", True, _player_color(winner)
-        )
+        if winner:
+            end_title = bold_48.render(
+                f"JOGADOR {winner} VENCEU!", True, _player_color(winner)
+            )
+        else:
+            end_title = bold_48.render("EMPATE!", True, COLOR_ACCENT)
         end_sub = small_font.render("Pressiona R para novo jogo ou ESC para sair", True, COLOR_TEXT)
 
         screen.blit(end_title, (box.centerx - end_title.get_width() // 2, box.y + 30))
@@ -530,52 +553,73 @@ def _make_ai_engine(difficulty: Difficulty) -> MCTSEngine:
 
 
 def launch_gui() -> None:
-    """Inicia a janela pygame com interface melhorada e executa o ciclo principal.
-    
-    Raises:
-        pygame.error: Se houver erro ao inicializar pygame.
-        SystemExit: Se houver erro irrecuperável.
-    """
+    """Inicia a janela pygame com interface melhorada e executa o ciclo principal."""
     try:
         pygame.init()
-        pygame.display.set_caption("PopOut - GUI Melhorada (pygame)")
+        pygame.display.set_caption("PopOut AI")
         screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         clock = pygame.time.Clock()
 
-        # Fontes modernizadas
+        # Fontes (criadas uma vez, reutilizadas)
         font = pygame.font.SysFont("arial", 32, bold=True)
         small_font = pygame.font.SysFont("arial", 20)
+        bold_24 = pygame.font.SysFont("arial", 24, bold=True)
+        bold_48 = pygame.font.SysFont("arial", 48, bold=True)
+        font_18 = pygame.font.SysFont("arial", 18)
+        font_18_bold = pygame.font.SysFont("arial", 18, bold=True)
 
-        # Estado do jogo
-        board = PopOutBoard()
-        mode_pop = False
-        message = ""
-        game_over = False
-        winner = 0
-        hover_col: int | None = None
-        game_mode = "PvP"
-        ai = StandardUCT(seed=42)
-        ai_iterations = 10000
-        ai_thinking = False
-        ai_delay = 0.3  # segundos antes de IA começar a pensar
-        ai_timer = 0.0
-
-        # Sistema de animações
-        anim = AnimationState()
-        
-        # Menu de pausa
+        # --- Estado mutável do jogo ---
+        state: dict = {}
         pause_menu = PauseMenu()
 
-        # Matriz anterior para detetar mudanças
-        prev_board_state = (board.mask_p1, board.mask_p2)
+        def reset_game(msg: str = "Novo jogo iniciado") -> None:
+            """Reinicia o estado do jogo."""
+            state["board"] = PopOutBoard()
+            state["prev"] = (0, 0)
+            state["mode_pop"] = False
+            state["message"] = msg
+            state["game_over"] = False
+            state["winner"] = 0
+            state["ai_thinking"] = False
+            state["ai_timer"] = 0.0
+            state["anim"] = AnimationState()
+
+        def apply_and_animate(move: int, mover: int) -> None:
+            """Aplica jogada, deteta peças novas e inicia animações."""
+            old_p1, old_p2 = state["board"].mask_p1, state["board"].mask_p2
+            state["board"].apply_move(move)
+            col = move if move < 7 else move - 7
+            for r in range(ROWS):
+                bit = 1 << (col * 7 + r)
+                if mover == 1 and (state["board"].mask_p1 & bit) and not (old_p1 & bit):
+                    state["anim"].add_piece_animation(r, col)
+                elif mover == 2 and (state["board"].mask_p2 & bit) and not (old_p2 & bit):
+                    state["anim"].add_piece_animation(r, col)
+            state["prev"] = (state["board"].mask_p1, state["board"].mask_p2)
+
+        def check_winner(mover: int) -> None:
+            """Verifica vitória ou empate após jogada."""
+            w = evaluate_after_move(state["board"], mover=mover)
+            if w:
+                state["game_over"] = True
+                state["winner"] = w
+                state["message"] = f"Jogador {w} venceu!"
+            elif state["board"].is_full():
+                state["game_over"] = True
+                state["winner"] = 0
+                state["message"] = "Empate - tabuleiro cheio!"
+
+        # Estado inicial
+        game_mode = "PvP"
+        ai = _make_ai_engine(pause_menu.selected_difficulty)
+        hover_col: int | None = None
+        reset_game("Bem-vindo ao PopOut!")
 
         running = True
         while running:
             try:
-                dt = clock.tick(60) / 1000.0  # Delta time em segundos
-
-                # Atualiza animações
-                anim.update(dt)
+                dt = clock.tick(60) / 1000.0
+                state["anim"].update(dt)
 
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -587,154 +631,112 @@ def launch_gui() -> None:
                     elif event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             pause_menu.toggle_pause()
-                        elif event.key == pygame.K_UP and pause_menu.is_paused:
-                            pause_menu.navigate(-1)
-                        elif event.key == pygame.K_DOWN and pause_menu.is_paused:
-                            pause_menu.navigate(1)
-                        elif event.key == pygame.K_RETURN and pause_menu.is_paused:
-                            # Processar seleção do menu
-                            selected = pause_menu.select_current()
-                            if selected == "Retomar":
-                                pause_menu.is_paused = False
-                            elif selected == "Novo Jogo":
-                                board = PopOutBoard()
-                                prev_board_state = (board.mask_p1, board.mask_p2)
-                                mode_pop = False
-                                message = "Novo jogo iniciado"
-                                game_over = False
-                                winner = 0
-                                ai_thinking = False
-                                anim = AnimationState()
-                                pause_menu.is_paused = False
-                            elif selected == "Dificuldade":
-                                # Cicla através dos níveis de dificuldade
-                                difficulties = list(Difficulty)
-                                current_idx = difficulties.index(pause_menu.selected_difficulty)
-                                pause_menu.selected_difficulty = difficulties[(current_idx + 1) % len(difficulties)]
-                                ai_iterations = pause_menu.selected_difficulty.value[0]
-                                message = f"Dificuldade: {pause_menu.selected_difficulty.value[1]}"
-                            elif selected == "Sair":
-                                running = False
-                        elif event.key == pygame.K_SPACE and not game_over and not pause_menu.is_paused:
-                            mode_pop = not mode_pop
-                            message = f"Modo: {'POP' if mode_pop else 'DROP'}"
-                        elif event.key == pygame.K_m and not pause_menu.is_paused:
-                            game_mode = "IA" if game_mode == "PvP" else "PvP"
-                            board = PopOutBoard()
-                            prev_board_state = (board.mask_p1, board.mask_p2)
-                            mode_pop = False
-                            message = f"Modo: {game_mode}"
-                            game_over = False
-                            winner = 0
-                            ai_thinking = False
-                            anim = AnimationState()
-                        elif event.key == pygame.K_r and not pause_menu.is_paused:
-                            board = PopOutBoard()
-                            prev_board_state = (board.mask_p1, board.mask_p2)
-                            mode_pop = False
-                            message = "Novo jogo iniciado"
-                            game_over = False
-                            winner = 0
-                            ai_thinking = False
-                            anim = AnimationState()
+                        elif pause_menu.is_paused:
+                            if event.key == pygame.K_UP:
+                                pause_menu.navigate(-1)
+                            elif event.key == pygame.K_DOWN:
+                                pause_menu.navigate(1)
+                            elif event.key == pygame.K_RETURN:
+                                selected = pause_menu.select_current()
+                                if selected == "Retomar":
+                                    pause_menu.is_paused = False
+                                elif selected == "Novo Jogo":
+                                    reset_game()
+                                    pause_menu.is_paused = False
+                                elif selected == "Dificuldade":
+                                    difficulties = list(Difficulty)
+                                    idx = difficulties.index(pause_menu.selected_difficulty)
+                                    pause_menu.selected_difficulty = difficulties[(idx + 1) % len(difficulties)]
+                                    ai = _make_ai_engine(pause_menu.selected_difficulty)
+                                    state["message"] = f"Dificuldade: {pause_menu.selected_difficulty.label}"
+                                elif selected == "Modo":
+                                    game_mode = "IA" if game_mode == "PvP" else "PvP"
+                                    reset_game(f"Modo: {game_mode}")
+                                elif selected == "Sair":
+                                    running = False
+                        else:
+                            if event.key == pygame.K_SPACE and not state["game_over"]:
+                                state["mode_pop"] = not state["mode_pop"]
+                                state["message"] = f"Modo: {'POP' if state['mode_pop'] else 'DROP'}"
+                            elif event.key == pygame.K_m:
+                                game_mode = "IA" if game_mode == "PvP" else "PvP"
+                                reset_game(f"Modo: {game_mode}")
+                            elif event.key == pygame.K_r:
+                                reset_game()
 
-                    elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not game_over and not pause_menu.is_paused:
-                        if game_mode == "IA" and board.current_player == 2:
+                    elif (event.type == pygame.MOUSEBUTTONDOWN
+                          and event.button == 1
+                          and not state["game_over"]
+                          and not pause_menu.is_paused):
+                        if game_mode == "IA" and state["board"].current_player == 2:
                             continue
-
                         col = _column_from_mouse(event.pos[0])
                         if col is None:
                             continue
-
-                        move = _encode_move(col, mode_pop)
-                        if move not in board.legal_moves():
-                            message = "Jogada inválida!"
+                        move = _encode_move(col, state["mode_pop"])
+                        if move not in state["board"].legal_moves():
+                            state["message"] = "Jogada invalida!"
                             continue
+                        mover = state["board"].current_player
+                        apply_and_animate(move, mover)
+                        check_winner(mover)
+                        if not state["game_over"]:
+                            state["message"] = ""
+                            state["ai_timer"] = 0.3 if game_mode == "IA" else 0
 
-                        mover = board.current_player
-                        board.apply_move(move)
-                        
-                        # Inicia animação para a peça colocada
-                        # Encontra a peça que foi colocada
-                        for r in range(ROWS):
-                            bit = 1 << (col * 7 + r)
-                            if mover == 1 and board.mask_p1 & bit and not (prev_board_state[0] & bit):
-                                anim.add_piece_animation(r, col)
-                            elif mover == 2 and board.mask_p2 & bit and not (prev_board_state[1] & bit):
-                                anim.add_piece_animation(r, col)
-                        
-                        prev_board_state = (board.mask_p1, board.mask_p2)
-
-                        winner = evaluate_after_move(board, mover=mover)
-                        if winner:
-                            game_over = True
-                            message = f"Jogador {winner} venceu!"
-                        else:
-                            message = ""
-                            ai_thinking = False
-                            ai_timer = ai_delay if game_mode == "IA" else 0
-
-                # Lógica da IA (só executa se não pausado)
-                if running and not game_over and not pause_menu.is_paused and game_mode == "IA" and board.current_player == 2:
-                    if not ai_thinking:
-                        ai_timer -= dt
-                        if ai_timer <= 0:
-                            ai_thinking = True
-                    
-                    if ai_thinking:
-                        ai_move = ai.run(board, iterations=ai_iterations)
-                        ai_mover = board.current_player
-                        board.apply_move(ai_move)
-                        
-                        # Inicia animação para a peça da IA
-                        for r in range(ROWS):
-                            ai_col = ai_move if ai_move < 7 else ai_move - 7
-                            bit = 1 << (ai_col * 7 + r)
-                            if ai_mover == 2 and board.mask_p2 & bit and not (prev_board_state[1] & bit):
-                                anim.add_piece_animation(r, ai_col)
-                        
-                        prev_board_state = (board.mask_p1, board.mask_p2)
-                        
-                        winner = evaluate_after_move(board, mover=ai_mover)
-                        if winner:
-                            game_over = True
-                            message = f"Jogador {winner} venceu!"
-                        else:
-                            message = "IA jogou"
-                        ai_thinking = False
-
-                # Renderiza
-                _draw_board(screen, board, font, small_font, mode_pop, message, hover_col, game_over, winner, game_mode, anim, ai_thinking)
-                
-                # Renderiza menu de pausa se ativo
+                # --- Renderiza frame ANTES da IA pensar ---
+                _draw_board(
+                    screen, state["board"], font, small_font,
+                    bold_24, bold_48, font_18, font_18_bold,
+                    state["mode_pop"], state["message"], hover_col,
+                    state["game_over"], state["winner"], game_mode,
+                    state["anim"], state["ai_thinking"],
+                )
                 if pause_menu.is_paused:
-                    _draw_pause_menu(screen, font, small_font, pause_menu)
-                
+                    _draw_pause_menu(screen, font, small_font, pause_menu, game_mode)
                 pygame.display.flip()
-            
+
+                # --- Lógica da IA (após render para não bloquear visual) ---
+                if (running
+                    and not state["game_over"]
+                    and not pause_menu.is_paused
+                    and game_mode == "IA"
+                    and state["board"].current_player == 2):
+                    if not state["ai_thinking"]:
+                        state["ai_timer"] -= dt
+                        if state["ai_timer"] <= 0:
+                            state["ai_thinking"] = True
+                            # Renderiza frame com indicador "IA a pensar..."
+                            _draw_board(
+                                screen, state["board"], font, small_font,
+                                bold_24, bold_48, font_18, font_18_bold,
+                                state["mode_pop"], state["message"], hover_col,
+                                state["game_over"], state["winner"], game_mode,
+                                state["anim"], True,
+                            )
+                            pygame.display.flip()
+                    if state["ai_thinking"]:
+                        iters = pause_menu.selected_difficulty.iterations
+                        ai_move = ai.run(state["board"], iterations=iters)
+                        ai_mover = state["board"].current_player
+                        apply_and_animate(ai_move, ai_mover)
+                        check_winner(ai_mover)
+                        if not state["game_over"]:
+                            state["message"] = "IA jogou"
+                        state["ai_thinking"] = False
+
             except KeyboardInterrupt:
-                print("\n⏹️  Jogo interrompido pelo utilizador")
-                running = False
-            except Exception as loop_error:
-                print(f"❌ Erro no loop de jogo: {type(loop_error).__name__}: {loop_error}")
                 running = False
 
         pygame.quit()
-    
+
     except pygame.error as e:
-        print(f"❌ Erro pygame: {e}", file=sys.stderr)
-        sys.exit(1)
-    except ImportError as e:
-        print(f"❌ Módulo não encontrado: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"❌ Erro inesperado: {type(e).__name__}: {e}", file=sys.stderr)
+        print(f"Erro pygame: {e}", file=sys.stderr)
         sys.exit(1)
     finally:
-        # Cleanup seguro
         try:
             pygame.quit()
-        except:
+        except Exception:
             pass
 
 
