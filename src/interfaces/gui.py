@@ -611,8 +611,9 @@ def launch_gui() -> None:
                                 difficulties = list(Difficulty)
                                 current_idx = difficulties.index(pause_menu.selected_difficulty)
                                 pause_menu.selected_difficulty = difficulties[(current_idx + 1) % len(difficulties)]
-                                ai_iterations = pause_menu.selected_difficulty.value[0]
-                                message = f"Dificuldade: {pause_menu.selected_difficulty.value[1]}"
+                                ai_iterations = pause_menu.selected_difficulty.iterations
+                                ai = _make_ai_engine(pause_menu.selected_difficulty)
+                                message = f"Dificuldade: {pause_menu.selected_difficulty.label}"
                             elif selected == "Sair":
                                 running = False
                         elif event.key == pygame.K_SPACE and not game_over and not pause_menu.is_paused:
