@@ -8,6 +8,8 @@ dependencies:
   - matplotlib
   - notebook
   - ipykernel
+  - pytest
+  - pytest-cov
   - pip
   - pip:
     - -e .

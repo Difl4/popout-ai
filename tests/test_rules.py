@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.engine.bitboard import COLS, ROWS, PopOutBoard
+from src.engine.bitboard import COLS, ROWS, COL_SIZE, PopOutBoard
 from src.engine.rules import (
     board_signature,
     check_winner_for_player,
@@ -15,12 +15,22 @@ from src.engine.rules import (
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _set_cell(board: PopOutBoard, row: int, col: int, val: int) -> None:
-    """Define diretamente uma célula (atalho para testes)."""
-    board.board[row][col] = val
-
+    """Define diretamente uma célula no bitboard."""
+    # Convertendo row (0 no topo) para índice de bit (0 no fundo)
+    # Se row=5 (fundo) e COL_SIZE=7, shift = col*7 + 0
+    bit_index = (col * COL_SIZE) + (ROWS - 1 - row)
+    bit = 1 << bit_index
+    
+    # Limpa o bit em ambas as máscaras primeiro
+    board.mask_p1 &= ~bit
+    board.mask_p2 &= ~bit
+    
+    if val == 1:
+        board.mask_p1 |= bit
+    elif val == 2:
+        board.mask_p2 |= bit
 
 def _make_board_with(cells: list[tuple[int, int, int]]) -> PopOutBoard:
-    """Cria tabuleiro com células específicas preenchidas: [(row, col, player), ...]."""
     b = PopOutBoard()
     for r, c, p in cells:
         _set_cell(b, r, c, p)
@@ -124,7 +134,8 @@ class TestBoardSignature:
         b = PopOutBoard()
         sig = board_signature(b)
         assert isinstance(sig, tuple)
-        # Deve ser usável como chave de dicionário
+        assert len(sig) == 2  # mask_p1 e mask_p2
+        # Deve ser usável como chave de dicionário (essencial para MCTS)
         d = {sig: True}
         assert d[sig] is True
 
