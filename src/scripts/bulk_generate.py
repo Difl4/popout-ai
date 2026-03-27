@@ -80,7 +80,8 @@ def generate_dataset(
     agent = make_agent(variant, seed=seed)
 
     rows = []
-    for _ in range(n_samples):
+    skipped = 0
+    for i in range(n_samples):
         steps = rng.randint(0, 20)
         board = randomize_state(steps=steps, rng=rng)
 
@@ -88,7 +89,12 @@ def generate_dataset(
         if not legal:
             continue
 
-        best_move_int = agent.run(board, iterations=iterations)
+        try:
+            best_move_int = agent.run(board, iterations=iterations)
+        except (TimeoutError, RuntimeError, Exception) as e:
+            print(f"  ⚠️  Amostra {i}: Erro ao correr MCTS: {type(e).__name__}: {e}")
+            skipped += 1
+            continue
         
         # Converter inteiro (0-13) para tuplo (tipo, coluna)
         if best_move_int < 7:
@@ -99,6 +105,9 @@ def generate_dataset(
         features = board.to_feature_dict()
         features["best_move"] = f"{best_move[0]}_{best_move[1]}"
         rows.append(features)
+
+    if skipped > 0:
+        print(f"  ℹ️  {skipped} amostras puladas por erro.")
 
     return pd.DataFrame(rows)
 

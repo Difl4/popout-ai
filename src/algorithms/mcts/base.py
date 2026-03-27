@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import math
 import random
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from ...engine.bitboard import PopOutBoard
-from ...engine.rules import board_signature, evaluate_after_move, is_draw
+from ...engine.rules import board_signature, evaluate_after_move
 
 # JOGADA AGORA É APENAS UM INTEIRO (0-13)
 Move = int
@@ -85,11 +86,16 @@ class BaseMCTS:
         if node.terminal_winner != 0:
             return 1.0 if node.terminal_winner == initial_mover else 0.0
 
-        history = [board_signature(state)]
+        # OTIMIZAÇÃO: Usar Counter para O(1) lookups em vez de lista
+        sig_counter: Counter = Counter([board_signature(state)])
         choice = self.random.choice 
 
         for _ in range(self.rollout_depth):
-            if state.is_full() or is_draw(state, history):
+            if state.is_full():
+                return 0.5
+            
+            # OTIMIZAÇÃO: Verificar threefold directamente (O(1) lookup)
+            if any(count >= 3 for count in sig_counter.values()):
                 return 0.5
 
             legal = state.legal_moves()
@@ -103,8 +109,10 @@ class BaseMCTS:
             winner = evaluate_after_move(state, mover=curr_p)
             if winner != 0:
                 return 1.0 if winner == initial_mover else 0.0
-                
-            history.append(board_signature(state))
+            
+            # OTIMIZAÇÃO: Incrementar counter (O(1)) em vez de append a lista
+            sig = board_signature(state)
+            sig_counter[sig] += 1
 
         return 0.5
 

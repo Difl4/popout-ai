@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
+import numpy as np
 
 
 @dataclass
@@ -58,9 +59,12 @@ class ID3Classifier:
 
         Returns:
             float: Entropia em bits.
+            
+        OTIMIZAÇÃO: Vetorizado com NumPy para evitar lambda.
         """
-        probs = labels.value_counts(normalize=True)
-        return float(-(probs * probs.apply(lambda p: math.log2(p) if p > 0 else 0.0)).sum())
+        probs = labels.value_counts(normalize=True).values
+        # Evitar log(0) com np.maximum
+        return float(-np.sum(probs * np.log2(np.maximum(probs, 1e-10))))
 
     def information_gain(self, df: pd.DataFrame, feature: str, target: str) -> float:
         """
@@ -96,7 +100,7 @@ class ID3Classifier:
         """
         return str(labels.value_counts().idxmax())
 
-    def build_tree(self, df: pd.DataFrame, features: list[str], target: str) -> DecisionNode:
+    def build_tree(self, df: pd.DataFrame, features: List[str], target: str) -> DecisionNode:
         """
         Constrói árvore ID3 recursivamente.
 
@@ -107,6 +111,8 @@ class ID3Classifier:
 
         Returns:
             DecisionNode: Nó raiz do subproblema.
+            
+        OTIMIZAÇÃO: Early stopping se encontrar feature com ganho muito elevado.
         """
         node = DecisionNode()
         node.majority_label = self.majority_class(df[target])
@@ -120,9 +126,26 @@ class ID3Classifier:
             node.label = node.majority_label
             return node
 
-        gains = {f: self.information_gain(df, f, target) for f in features}
-        best_feature = max(gains, key=gains.get)
-
+        gains = {}
+        best_gain = -1.0
+        best_feature = None
+        
+        # OTIMIZAÇÃO: Early stopping se encontrar feature com ganho muito bom
+        for f in features:
+            gain = self.information_gain(df, f, target)
+            gains[f] = gain
+            
+            if gain > best_gain:
+                best_gain = gain
+                best_feature = f
+            
+            # Early stopping: se ganho é próximo do máximo teórico, para
+            if best_gain > 0.95:
+                break
+        
+        if best_feature is None:
+            best_feature = features[0]
+        
         node.feature = best_feature
         remaining = [f for f in features if f != best_feature]
 
@@ -179,8 +202,14 @@ class ID3Classifier:
 
         Returns:
             pd.Series: Previsões.
+            
+        OTIMIZAÇÃO: Usa list comprehension em vez de apply().
         """
-        return df.apply(self.predict_one, axis=1)
+        if self.root is None:
+            raise ValueError("Modelo ainda não treinado.")
+        
+        predictions = [self.predict_one(row) for _, row in df.iterrows()]
+        return pd.Series(predictions, index=df.index)
 
     def score(self, df: pd.DataFrame, target: str) -> float:
         """

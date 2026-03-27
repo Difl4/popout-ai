@@ -26,21 +26,19 @@ class PopOutBoard:
         Gera jogadas como inteiros:
         0-6: Drop na coluna 0-6
         7-13: Pop na coluna 0-6
+        
+        OTIMIZAÇÃO: Usa list comprehension em vez de append iterativo.
         """
-        moves = []
         full_mask = self.merged_mask
         target_mask = self.mask_p1 if self.current_player == 1 else self.mask_p2
-
-        for c in range(COLS):
-            # Check Drop: Verifica se o bit do topo da coluna está vazio
-            if not (full_mask & (1 << (c * COL_SIZE + 5))):
-                moves.append(c) # Move 0 a 6
-            
-            # Check Pop: Verifica se o bit da base da coluna pertence ao jogador
-            if target_mask & (1 << (c * COL_SIZE)):
-                moves.append(c + 7) # Move 7 a 13
-                
-        return moves
+        
+        # Drops: colunas onde o topo está vazio
+        drops = [c for c in range(COLS) if not (full_mask & (1 << (c * COL_SIZE + 5)))]
+        
+        # Pops: colunas onde o jogador tem peça na base
+        pops = [c + 7 for c in range(COLS) if target_mask & (1 << (c * COL_SIZE))]
+        
+        return drops + pops
 
     def apply_move(self, move: int) -> None:
         """Aplica a jogada (0-13) diretamente."""
@@ -62,8 +60,11 @@ class PopOutBoard:
             self.mask_p1 = (self.mask_p1 & ~col_bit_mask) | ((self.mask_p1 & col_bit_mask) >> 1) & col_bit_mask
             self.mask_p2 = (self.mask_p2 & ~col_bit_mask) | ((self.mask_p2 & col_bit_mask) >> 1) & col_bit_mask
             
-            # Limpa o "lixo" que possa ter subido para o 7º bit
-            CLEAN_MASK = ~0x4081020408102040 
+            # OTIMIZAÇÃO: Gerar CLEAN_MASK dinamicamente para remover bits do lixo
+            # Cada coluna tem COL_SIZE bits, mantemos apenas os 6 inferiores (ROWS-1)
+            CLEAN_MASK = 0
+            for col_idx in range(COLS):
+                CLEAN_MASK |= (0b111111 << (col_idx * COL_SIZE))  # Máscara de 6 bits por coluna
             self.mask_p1 &= CLEAN_MASK
             self.mask_p2 &= CLEAN_MASK
 

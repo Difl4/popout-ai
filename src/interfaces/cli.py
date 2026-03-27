@@ -24,6 +24,26 @@ def decode_move(move: int) -> str:
     if move < 7: return f"drop {move}"
     return f"pop {move - 7}"
 
+def check_and_print_winner(board: PopOutBoard, mover: int) -> bool:
+    """
+    Verifica se há vencedor após uma jogada e imprime o resultado.
+    
+    REFATORAÇÃO: Extrai lógica duplicada de run_cli_game().
+    
+    Args:
+        board (PopOutBoard): Estado actual do jogo.
+        mover (int): Jogador que fez a última jogada.
+        
+    Returns:
+        bool: True se há vencedor, False caso contrário.
+    """
+    winner = evaluate_after_move(board, mover=mover)
+    if winner:
+        print(str(board))
+        print(f"Vitória do jogador {winner}.")
+        return True
+    return False
+
 def run_cli_game(iterations: int = 10000) -> None:
     board = PopOutBoard()
     ai = StandardUCT(seed=42)
@@ -50,10 +70,7 @@ def run_cli_game(iterations: int = 10000) -> None:
             mover = board.current_player
             board.apply_move(engine_move)
 
-            winner = evaluate_after_move(board, mover=mover)
-            if winner:
-                print(str(board))
-                print(f"Vitória do jogador {winner}.")
+            if check_and_print_winner(board, mover):
                 return
         else:
             ai_move_int = ai.run(board, iterations=iterations)
@@ -61,10 +78,7 @@ def run_cli_game(iterations: int = 10000) -> None:
             mover = board.current_player
             board.apply_move(ai_move_int)
 
-            winner = evaluate_after_move(board, mover=mover)
-            if winner:
-                print(str(board))
-                print(f"Vitória do jogador {winner}.")
+            if check_and_print_winner(board, mover):
                 return
 
 if __name__ == "__main__":
