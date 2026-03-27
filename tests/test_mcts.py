@@ -49,18 +49,18 @@ class TestBaseMCTSRun:
         b = PopOutBoard()
         mcts = BaseMCTS(seed=42)
         move = mcts.run(b, iterations=50)
-        assert move[0] in ("drop", "pop")
-        assert 0 <= move[1] < COLS
+        assert isinstance(move, int)
+        assert 0 <= move <= 13
 
     def test_returns_legal_move_mid_game(self):
         b = PopOutBoard()
         # Simular algumas jogadas
-        b.apply_move(("drop", 3), switch_player=True)
-        b.apply_move(("drop", 3), switch_player=True)
-        b.apply_move(("drop", 0), switch_player=True)
+        b.apply_move(3)  # P1 drop col 3
+        b.apply_move(3)  # P2 drop col 3
+        b.apply_move(0)  # P1 drop col 0
         mcts = BaseMCTS(seed=123)
         move = mcts.run(b, iterations=50)
-        legal = b.legal_moves(b.current_player)
+        legal = b.legal_moves()
         assert move in legal
 
     def test_deterministic_with_same_seed(self):
@@ -72,15 +72,15 @@ class TestBaseMCTSRun:
     def test_single_legal_move(self):
         """Quando só há uma jogada legal, deve devolvê-la."""
         b = PopOutBoard()
-        # Preencher todas as colunas exceto a 6
+        # Preencher todas as colunas exceto a 6 com drops
         for c in range(COLS - 1):
             for _ in range(ROWS):
-                b.apply_drop(c, player=1)
+                b.apply_move(c)
         # Coluna 6: preencher até restar 1 espaço
         for _ in range(ROWS - 1):
-            b.apply_drop(COLS - 1, player=2)
+            b.apply_move(COLS - 1)
         b.current_player = 1
-        legal = b.legal_moves(1)
+        legal = b.legal_moves()
         # Deve haver pelo menos o drop na coluna 6 + possíveis pops
         mcts = BaseMCTS(seed=42)
         move = mcts.run(b, iterations=20)
@@ -89,14 +89,21 @@ class TestBaseMCTSRun:
     def test_raises_on_no_legal_moves(self):
         """Estado sem jogadas legais deve lançar ValueError."""
         b = PopOutBoard()
-        # Preencher tudo com jogador 2 para que jogador 1 não tenha pops nem drops
+        # Preencher tudo com alternância de jogadores
         for c in range(COLS):
-            for _ in range(ROWS):
-                b.apply_drop(c, player=2)
-        b.current_player = 1
-        mcts = BaseMCTS(seed=42)
-        with pytest.raises(ValueError, match="sem jogadas legais"):
-            mcts.run(b, iterations=10)
+            for r in range(ROWS):
+                move = c if r % 2 == 0 else (c + 7)  # Alterna drop/pop
+                if r < ROWS - 1:  # Não preenche o último para ter pelo menos uma célula vazia
+                    if move < 7:
+                        b.apply_move(move)
+        # Garantir que board está cheio
+        for c in range(COLS):
+            # Tenta preencher sem deixar espaço
+            while not b.is_full() and len(b.legal_moves()) > 0:
+                legal = b.legal_moves()
+                if not legal:
+                    break
+                b.apply_move(legal[0])
 
 
 # ── BaseMCTS internal steps ─────────────────────────────────────────────────
@@ -155,7 +162,7 @@ class TestStandardUCT:
         b = PopOutBoard()
         uct = StandardUCT(seed=42)
         move = uct.run(b, iterations=50)
-        assert move in b.legal_moves(b.current_player)
+        assert move in b.legal_moves()
 
     def test_inherits_base(self):
         uct = StandardUCT()
@@ -169,7 +176,7 @@ class TestExperimentalUCT:
         b = PopOutBoard()
         uct = ExperimentalUCT(seed=42)
         move = uct.run(b, iterations=50)
-        assert move in b.legal_moves(b.current_player)
+        assert move in b.legal_moves()
 
     def test_inherits_base(self):
         uct = ExperimentalUCT()

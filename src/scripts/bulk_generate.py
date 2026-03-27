@@ -50,11 +50,11 @@ def randomize_state(steps: int, rng: random.Random) -> PopOutBoard:
     """
     board = PopOutBoard()
     for _ in range(steps):
-        legal = board.legal_moves(board.current_player)
+        legal = board.legal_moves()
         if not legal:
             break
         move = rng.choice(legal)
-        board.apply_move(move, switch_player=True)
+        board.apply_move(move)
     return board
 
 
@@ -84,11 +84,18 @@ def generate_dataset(
         steps = rng.randint(0, 20)
         board = randomize_state(steps=steps, rng=rng)
 
-        legal = board.legal_moves(board.current_player)
+        legal = board.legal_moves()
         if not legal:
             continue
 
-        best_move = agent.run(board, iterations=iterations)
+        best_move_int = agent.run(board, iterations=iterations)
+        
+        # Converter inteiro (0-13) para tuplo (tipo, coluna)
+        if best_move_int < 7:
+            best_move = ("drop", best_move_int)
+        else:
+            best_move = ("pop", best_move_int - 7)
+        
         features = board.to_feature_dict()
         features["best_move"] = f"{best_move[0]}_{best_move[1]}"
         rows.append(features)

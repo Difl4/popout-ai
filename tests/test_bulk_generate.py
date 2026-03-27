@@ -38,10 +38,9 @@ class TestRandomizeState:
     def test_zero_steps_returns_empty(self):
         rng = random.Random(42)
         board = randomize_state(steps=0, rng=rng)
-        # Tabuleiro deve estar vazio
-        for r in range(ROWS):
-            for c in range(COLS):
-                assert board.board[r][c] == 0
+        # Tabuleiro deve estar vazio (sem peças)
+        assert board.mask_p1 == 0
+        assert board.mask_p2 == 0
 
     def test_many_steps_does_not_crash(self):
         rng = random.Random(42)
@@ -51,9 +50,10 @@ class TestRandomizeState:
     def test_state_has_pieces_after_steps(self):
         rng = random.Random(42)
         board = randomize_state(steps=10, rng=rng)
-        total_pieces = sum(
-            1 for r in range(ROWS) for c in range(COLS) if board.board[r][c] != 0
-        )
+        # Contar peças nos bitboards
+        p1_pieces = bin(board.mask_p1).count('1')
+        p2_pieces = bin(board.mask_p2).count('1')
+        total_pieces = p1_pieces + p2_pieces
         assert total_pieces > 0
 
 

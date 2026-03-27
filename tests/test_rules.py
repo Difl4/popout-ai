@@ -142,14 +142,14 @@ class TestBoardSignature:
     def test_different_states_different_signatures(self):
         b1 = PopOutBoard()
         b2 = PopOutBoard()
-        b2.apply_drop(0, player=1)
+        b2.apply_move(0)  # P1 drop col 0
         assert board_signature(b1) != board_signature(b2)
 
     def test_same_state_same_signature(self):
         b1 = PopOutBoard()
-        b1.apply_drop(3, player=1)
+        b1.apply_move(3)  # P1 drop col 3
         b2 = PopOutBoard()
-        b2.apply_drop(3, player=1)
+        b2.apply_move(3)  # P1 drop col 3
         assert board_signature(b1) == board_signature(b2)
 
 
@@ -176,9 +176,11 @@ class TestThreefoldRepetition:
 class TestIsDraw:
     def test_draw_full_board(self):
         b = PopOutBoard()
+        # Preencher o tabuleiro com movimentos alternados
         for c in range(COLS):
-            for r in range(ROWS):
-                b.apply_drop(c, player=(r % 2) + 1)
+            for _ in range(ROWS):
+                b.apply_move(c)
+        assert b.is_full() is True
         assert is_draw(b, []) is True
 
     def test_draw_threefold(self):

@@ -71,8 +71,35 @@ class PopOutBoard:
         self.current_player = 3 - self.current_player
 
     def is_full(self) -> bool:
-        TOP_ROW_MASK = 0x804020100804020 >> 3
+        # TOP_ROW_MASK: bit 5, 12, 19, 26, 33, 40, 47 representam a linha de topo
+        # de cada coluna (linhas 0-6, posição 5 em cada coluna)
+        TOP_ROW_MASK = 0x810204081020
         return (self.merged_mask & TOP_ROW_MASK) == TOP_ROW_MASK
+
+    def to_feature_dict(self) -> dict:
+        """
+        Converte o estado do tabuleiro em dicionário de features para ML.
+        
+        Returns:
+            dict: Dicionário com features categóricas por célula e jogador actual.
+        """
+        features = {}
+        
+        # Cell features: cada célula como 0 (vazia), 1 (jogador 1) ou 2 (jogador 2)
+        for r in range(ROWS):
+            for c in range(COLS):
+                bit = 1 << (c * COL_SIZE + r)
+                if self.mask_p1 & bit:
+                    features[f"cell_{r}_{c}"] = 1
+                elif self.mask_p2 & bit:
+                    features[f"cell_{r}_{c}"] = 2
+                else:
+                    features[f"cell_{r}_{c}"] = 0
+        
+        # Jogador actual
+        features["current_player"] = self.current_player
+        
+        return features
 
     def __str__(self) -> str:
         res = []

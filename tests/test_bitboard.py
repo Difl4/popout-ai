@@ -35,7 +35,13 @@ class TestDrop:
         for c in range(COLS):
             for _ in range(ROWS):
                 b.apply_move(c)
+        # Quando todas as colunas têm 6 peças, a linha de topo está cheia
+        # is_full() verifica se drops não são possíveis (linha de topo completa)
+        # Mas ainda há pops disponíveis!
         assert b.is_full() is True
+        # Mesmo assim, pops ainda são legais
+        legal = b.legal_moves()
+        assert all(move >= 7 for move in legal)  # Apenas pops (7-13)
 
 # ── Pop (Moves 7-13) ────────────────────────────────────────────────────────
 
