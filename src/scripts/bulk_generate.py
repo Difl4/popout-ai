@@ -31,6 +31,10 @@ def make_agent(variant: str, seed: int | None = None):
     Raises:
         ValueError: Se variante for desconhecida.
     """
+    if not isinstance(variant, str):
+        raise TypeError(f"variant deve ser string, recebeu {type(variant).__name__}")
+    if seed is not None and not isinstance(seed, int):
+        raise TypeError(f"seed deve ser int ou None, recebeu {type(seed).__name__}")
     mapping: dict[str, Type] = {
         "uct_standard": StandardUCT,
         "uct_experimental": ExperimentalUCT,
