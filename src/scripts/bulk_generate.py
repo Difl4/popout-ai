@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import random
 from pathlib import Path
-from typing import Type
 
 import pandas as pd
 
@@ -19,22 +18,32 @@ def make_agent(variant: str, seed: int | None = None):
     Cria agente MCTS conforme variante pedida.
 
     Args:
-        variant (str): Nome da variante ('uct_standard' ou 'uct_experimental').
+        variant (str): Nome da variante.
+            'uct_standard'     — Python MCTS padrão.
+            'uct_experimental' — Python MCTS experimental.
+            'numba'            — NumbaMCTS (Numba simulate).
+            'flat_numba'       — FlatNumbaMCTS (loop inteiro em Numba, mais rápido).
         seed (int | None): Semente opcional.
 
     Returns:
-        BaseMCTS: Instância de agente MCTS.
+        MCTSEngine: Instância de agente MCTS.
 
     Raises:
         ValueError: Se variante for desconhecida.
     """
-    mapping: dict[str, Type] = {
-        "uct_standard": StandardUCT,
-        "uct_experimental": ExperimentalUCT,
+    from ..algorithms.mcts.numba_mcts import NumbaMCTS, FlatNumbaMCTS, warmup
+
+    mapping = {
+        "uct_standard": lambda: StandardUCT(seed=seed),
+        "uct_experimental": lambda: ExperimentalUCT(seed=seed),
+        "numba": lambda: NumbaMCTS(seed=seed),
+        "flat_numba": lambda: FlatNumbaMCTS(seed=seed),
     }
     if variant not in mapping:
-        raise ValueError(f"Variante desconhecida: {variant}")
-    return mapping[variant](seed=seed)
+        raise ValueError(f"Variante desconhecida: {variant!r}. Opções: {list(mapping)}")
+    if variant in ("numba", "flat_numba"):
+        warmup()
+    return mapping[variant]()
 
 
 def randomize_state(steps: int, rng: random.Random) -> PopOutBoard:
