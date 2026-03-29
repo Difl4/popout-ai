@@ -14,6 +14,7 @@ from typing import Optional
 from ..algorithms.mcts.uct_experimental import ExperimentalUCT
 from ..algorithms.mcts.uct_standard import StandardUCT
 from ..algorithms.mcts.protocol import MCTSEngine
+from ..algorithms.mcts.numba_mcts import FlatNumbaMCTS
 from ..engine.bitboard import PopOutBoard
 from ..engine.rules import board_signature, evaluate_after_move, is_threefold_repetition
 
@@ -263,7 +264,7 @@ def run_cvc(
 
 
 def run_cvc_tournament(
-    n_games: int = 10,
+    n_games: int = 40,
     iterations1: int = 300,
     iterations2: int = 300,
 ) -> None:
@@ -284,20 +285,23 @@ def run_cvc_tournament(
     print(f"  {n_games} jogos  |  Standard={iterations1} iter  |  Experimental={iterations2} iter\n")
 
     for i in range(n_games):
-        # Alternamos quem começa para eliminar vantagem de primeiro jogador
+        # Alternamos quem começa para eliminar vantagem de primeiro jogador.
+        # As iterações acompanham o algoritmo, não a posição (1º/2º jogador).
         if i % 2 == 0:
-            a1 = StandardUCT(seed=i)
-            a2 = ExperimentalUCT(seed=i)
+            a1 = FlatNumbaMCTS(seed=i)
+            a2 = FlatNumbaMCTS(seed=i)
             n1, n2 = "Standard", "Experimental"
+            i1, i2 = iterations1, iterations2
         else:
-            a1 = ExperimentalUCT(seed=i)
-            a2 = StandardUCT(seed=i)
+            a1 = FlatNumbaMCTS(seed=i)
+            a2 = FlatNumbaMCTS(seed=i)
             n1, n2 = "Experimental", "Standard"
+            i1, i2 = iterations2, iterations1  # Experimental=100k, Standard=10k
 
         result = run_cvc(
             agent1=a1, agent2=a2,
             agent1_name=n1, agent2_name=n2,
-            iterations1=iterations1, iterations2=iterations2,
+            iterations1=i1, iterations2=i2,
             verbose=False,
         )
 
@@ -349,7 +353,7 @@ def run_cli_game(iterations: int = 1000) -> None:
     elif choice == "2":
         run_hvc(iterations=iterations)
     elif choice == "3":
-        run_cvc_tournament(n_games=6, iterations1=300, iterations2=300)
+        run_cvc_tournament(n_games=40, iterations1=10000, iterations2=100000)
     else:
         print(f"Opção '{choice}' inválida. A iniciar modo padrão (Humano vs Computador).")
         run_hvc(iterations=iterations)

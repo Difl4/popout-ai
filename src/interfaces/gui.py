@@ -105,8 +105,8 @@ class Difficulty(Enum):
     EASY         = (100,    "Fácil (100)",         "standard")
     MEDIUM       = (500,    "Médio (500)",          "standard")
     HARD         = (1000,   "Difícil (1000)",       "standard")
-    EXTREME      = (2000,   "Extremo (2000)",       "standard")
-    EXTREME_NUMBA= (50_000, "Extremo Numba (50k)",  "flat_numba")
+    EXTREME      = (10000,   "Extremo (2000)",       "standard")
+    EXTREME_NUMBA= (100_000, "Extremo Numba (100k)",  "flat_numba")
 
     @property
     def iterations(self) -> int:

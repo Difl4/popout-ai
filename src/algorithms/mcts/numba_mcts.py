@@ -59,7 +59,7 @@ class NumbaMCTS(BaseMCTS):
     def __init__(
         self,
         exploration_c: float = 1.414,
-        rollout_depth: int = 50,
+        rollout_depth: int = 150,
         seed: Optional[int] = None,
     ) -> None:
         super().__init__(exploration_c=exploration_c, rollout_depth=rollout_depth, seed=seed)
@@ -157,7 +157,7 @@ class FlatNumbaMCTS:
         self,
         max_nodes: int = 200_000,
         exploration_c: float = 1.414,
-        rollout_depth: int = 50,
+        rollout_depth: int = 150,
         seed: Optional[int] = None,
     ) -> None:
         self.exploration_c = float(exploration_c)
