@@ -10,26 +10,40 @@ Projeto de Inteligencia Artificial (2025/2026) — jogo **PopOut** (variante de 
 popout-ai/
 ├── src/
 │   ├── __main__.py            # Entry point (python -m src)
+│   ├── config.py              # Configuracao global (dimensoes do tabuleiro, etc.)
 │   ├── game_state.py          # Persistencia de estado
 │   ├── engine/
-│   │   ├── bitboard.py        # Representacao do tabuleiro (bitboard)
-│   │   └── rules.py           # Regras do jogo e detecao de vitoria
+│   │   ├── standard/
+│   │   │   ├── bitboard.py    # Representacao do tabuleiro (bitboard)
+│   │   │   └── rules.py       # Regras do jogo e detecao de vitoria
+│   │   └── optimized/
+│   │       └── numba_rules.py # Kernels JIT das regras (@njit)
 │   ├── algorithms/
-│   │   ├── mcts/
-│   │   │   ├── base.py        # MCTS base (select, expand, simulate, backprop)
-│   │   │   ├── protocol.py    # Interface MCTSEngine
-│   │   │   ├── uct_standard.py
-│   │   │   ├── uct_experimental.py
-│   │   │   ├── numba_mcts.py  # Variantes aceleradas com Numba
-│   │   │   └── kernels.py     # Kernels JIT para bitboard
+│   │   ├── factory.py         # Instanciacao de agentes por nome
+│   │   └── mcts/
+│   │       ├── protocol.py    # Interface MCTSEngine
+│   │       ├── standard/
+│   │       │   ├── base.py          # MCTS base (select, expand, simulate, backprop)
+│   │       │   ├── uct_standard.py  # Agente StandardUCT
+│   │       │   └── uct_experimental.py
+│   │       └── optimized/
+│   │           ├── numba_search.py  # Kernels JIT de pesquisa MCTS (@njit)
+│   │           └── numba_mcts.py    # NumbaMCTS e FlatNumbaMCTS
+│   ├── ml/
+│   │   ├── dataset_generator.py     # Geracao de datasets via MCTS
+│   │   ├── discretizer.py           # Discretizacao de atributos numericos
 │   │   └── id3/
-│   │       ├── learner.py     # Classificador ID3
-│   │       └── discretizer.py # Discretizacao de atributos numericos
+│   │       └── learner.py           # Classificador ID3
 │   ├── interfaces/
 │   │   ├── cli.py             # Interface de linha de comandos
-│   │   └── gui.py             # Interface grafica (pygame)
-│   └── scripts/
-│       └── bulk_generate.py   # Geracao de datasets via MCTS
+│   │   └── gui/               # Interface grafica (pygame)
+│   │       ├── core.py        # Loop principal e logica de entrada
+│   │       ├── renderer.py    # Funcoes de desenho
+│   │       ├── assets.py      # Constantes visuais e fontes
+│   │       ├── components.py  # Componentes UI (menus, etc.)
+│   │       └── state.py       # Estado de animacao e dificuldade
+│   └── utils/
+│       └── numba_tools.py     # Limpeza de cache e recompilacao Numba
 ├── data/
 │   └── generated/             # Datasets gerados pelo MCTS
 ├── tests/                     # Suite de testes (pytest)
@@ -86,7 +100,7 @@ No jogo: `d3` = drop na coluna 3, `p0` = pop na coluna 0.
 ### Gerar dataset
 
 ```bash
-python -m src.scripts.bulk_generate --variant uct_standard --samples 200 --iterations 150 --seed 42
+python -m src.ml.dataset_generator --variant uct_standard --samples 200 --iterations 150 --seed 42
 ```
 
 ### Notebook

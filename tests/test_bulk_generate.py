@@ -3,10 +3,10 @@
 import pytest
 import pandas as pd
 
-from src.scripts.bulk_generate import generate_dataset, make_agent, randomize_state
-from src.algorithms.mcts.uct_standard import StandardUCT
-from src.algorithms.mcts.uct_experimental import ExperimentalUCT
-from src.engine.bitboard import COLS, ROWS, PopOutBoard
+from src.ml.dataset_generator import generate_dataset, make_agent, randomize_state
+from src.algorithms.mcts.standard.uct_standard import StandardUCT
+from src.algorithms.mcts.standard.uct_experimental import ExperimentalUCT
+from src.engine.standard.bitboard import COLS, ROWS, PopOutBoard
 
 import random
 

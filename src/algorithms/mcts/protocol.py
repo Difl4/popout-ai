@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from ...engine.bitboard import PopOutBoard
+    from src.engine.standard.bitboard import PopOutBoard
 
 
 @runtime_checkable

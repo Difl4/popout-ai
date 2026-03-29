@@ -8,8 +8,8 @@ from collections import Counter
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from ...engine.bitboard import PopOutBoard
-from ...engine.rules import board_signature, evaluate_after_move
+from src.engine.standard.bitboard import PopOutBoard
+from src.engine.standard.rules import board_signature, evaluate_after_move
 
 # JOGADA AGORA É APENAS UM INTEIRO (0-13)
 Move = int
@@ -55,7 +55,7 @@ class BaseMCTS:
             if score > best_score:
                 best_score = score
                 best = child
-        return best 
+        return best
 
     def select(self, node: MCTSNode) -> MCTSNode:
         current = node
@@ -88,12 +88,12 @@ class BaseMCTS:
 
         # OTIMIZAÇÃO: Usar Counter para O(1) lookups em vez de lista
         sig_counter: Counter = Counter([board_signature(state)])
-        choice = self.random.choice 
+        choice = self.random.choice
 
         for _ in range(self.rollout_depth):
             if state.is_full():
                 return 0.5
-            
+
             # OTIMIZAÇÃO: Verificar threefold directamente (O(1) lookup)
             if any(count >= 3 for count in sig_counter.values()):
                 return 0.5
@@ -105,11 +105,11 @@ class BaseMCTS:
             move = choice(legal)
             curr_p = state.current_player
             state.apply_move(move)
-            
+
             winner = evaluate_after_move(state, mover=curr_p)
             if winner != 0:
                 return 1.0 if winner == initial_mover else 0.0
-            
+
             # OTIMIZAÇÃO: Incrementar counter (O(1)) em vez de append a lista
             sig = board_signature(state)
             sig_counter[sig] += 1

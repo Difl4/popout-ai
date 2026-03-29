@@ -3,8 +3,8 @@
 import pytest
 import pandas as pd
 
-from src.algorithms.id3.discretizer import apply_bins, fit_quantile_bins
-from src.algorithms.id3.learner import ID3Classifier
+from src.ml.discretizer import apply_bins, fit_quantile_bins
+from src.ml.id3.learner import ID3Classifier
 
 
 # ── fit_quantile_bins ────────────────────────────────────────────────────────

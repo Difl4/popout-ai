@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .base import BaseMCTS, MCTSNode
+from src.algorithms.mcts.standard.base import BaseMCTS, MCTSNode
 
 
 class ExperimentalUCT(BaseMCTS):

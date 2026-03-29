@@ -2,11 +2,11 @@
 
 import pytest
 
-from src.engine.bitboard import COLS, ROWS, PopOutBoard
-from src.engine.rules import evaluate_after_move
-from src.algorithms.mcts.base import BaseMCTS, MCTSNode
-from src.algorithms.mcts.uct_standard import StandardUCT
-from src.algorithms.mcts.uct_experimental import ExperimentalUCT
+from src.engine.standard.bitboard import COLS, ROWS, PopOutBoard
+from src.engine.standard.rules import evaluate_after_move
+from src.algorithms.mcts.standard.base import BaseMCTS, MCTSNode
+from src.algorithms.mcts.standard.uct_standard import StandardUCT
+from src.algorithms.mcts.standard.uct_experimental import ExperimentalUCT
 
 
 # ── MCTSNode ─────────────────────────────────────────────────────────────────

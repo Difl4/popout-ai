@@ -3,7 +3,9 @@
 from __future__ import annotations
 from collections import Counter
 from typing import Iterable, List, Tuple
-from .bitboard import PopOutBoard
+
+from src.engine.standard.bitboard import PopOutBoard
+
 
 def has_won(bitmask: int) -> bool:
     """Checks for 4-in-a-row using bitwise shifts (Connect 4 logic)."""

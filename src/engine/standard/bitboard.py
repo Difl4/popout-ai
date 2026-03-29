@@ -4,9 +4,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List
 
-ROWS = 6
-COLS = 7
-COL_SIZE = 7 
+from src.config import BOARD_WIDTH, BOARD_HEIGHT, COL_SIZE
+
+ROWS = BOARD_HEIGHT
+COLS = BOARD_WIDTH
+# COL_SIZE is imported from src.config and re-exported here
 
 @dataclass
 class PopOutBoard:
@@ -26,26 +28,26 @@ class PopOutBoard:
         Gera jogadas como inteiros:
         0-6: Drop na coluna 0-6
         7-13: Pop na coluna 0-6
-        
+
         OTIMIZAÇÃO: Usa list comprehension em vez de append iterativo.
         """
         full_mask = self.merged_mask
         target_mask = self.mask_p1 if self.current_player == 1 else self.mask_p2
-        
+
         # Drops: colunas onde o topo está vazio
         drops = [c for c in range(COLS) if not (full_mask & (1 << (c * COL_SIZE + 5)))]
-        
+
         # Pops: colunas onde o jogador tem peça na base
         pops = [c + 7 for c in range(COLS) if target_mask & (1 << (c * COL_SIZE))]
-        
+
         return drops + pops
 
     def apply_move(self, move: int) -> None:
         """Aplica a jogada (0-13) diretamente.
-        
+
         Args:
             move (int): Move index (0-6 for drops, 7-13 for pops).
-            
+
         Raises:
             TypeError: If move is not an integer.
             ValueError: If move is out of range [0, 13].
@@ -53,13 +55,13 @@ class PopOutBoard:
         # Type validation
         if not isinstance(move, int) or isinstance(move, bool):
             raise TypeError(f"Move must be integer, got {type(move).__name__}")
-        
+
         # Range validation
         if move < 0 or move > 13:
             raise ValueError(f"Move must be in range [0, 13], got {move}")
-        
+
         p = self.current_player
-        
+
         if move < 7:
             # DROP LOGIC
             col = move
@@ -72,10 +74,10 @@ class PopOutBoard:
             col = move - 7
             shift = col * COL_SIZE
             col_bit_mask = 0b111111 << shift
-            
+
             self.mask_p1 = (self.mask_p1 & ~col_bit_mask) | ((self.mask_p1 & col_bit_mask) >> 1) & col_bit_mask
             self.mask_p2 = (self.mask_p2 & ~col_bit_mask) | ((self.mask_p2 & col_bit_mask) >> 1) & col_bit_mask
-            
+
             # OTIMIZAÇÃO: Gerar CLEAN_MASK dinamicamente para remover bits do lixo
             # Cada coluna tem COL_SIZE bits, mantemos apenas os 6 inferiores (ROWS-1)
             CLEAN_MASK = 0
@@ -96,12 +98,12 @@ class PopOutBoard:
     def to_feature_dict(self) -> dict:
         """
         Converte o estado do tabuleiro em dicionário de features para ML.
-        
+
         Returns:
             dict: Dicionário com features categóricas por célula e jogador actual.
         """
         features = {}
-        
+
         # Cell features: cada célula como 0 (vazia), 1 (jogador 1) ou 2 (jogador 2)
         for r in range(ROWS):
             for c in range(COLS):
@@ -112,10 +114,10 @@ class PopOutBoard:
                     features[f"cell_{r}_{c}"] = 2
                 else:
                     features[f"cell_{r}_{c}"] = 0
-        
+
         # Jogador actual
         features["current_player"] = self.current_player
-        
+
         return features
 
     def __str__(self) -> str:
@@ -132,24 +134,13 @@ class PopOutBoard:
         return "\n".join(res)
 
     def __eq__(self, other: object) -> bool:
-        """Comparar dois boards por estado.
-        
-        Args:
-            other: Outro objeto para comparar.
-            
-        Returns:
-            bool: True se boards têm mesmo estado.
-        """
+        """Comparar dois boards por estado."""
         if not isinstance(other, PopOutBoard):
             return False
-        return (self.mask_p1 == other.mask_p1 and 
+        return (self.mask_p1 == other.mask_p1 and
                 self.mask_p2 == other.mask_p2 and
                 self.current_player == other.current_player)
 
     def __hash__(self) -> int:
-        """Hash do estado do board para usar em sets/dicts.
-        
-        Returns:
-            int: Hash do estado combinado.
-        """
+        """Hash do estado do board para usar em sets/dicts."""
         return hash((self.mask_p1, self.mask_p2, self.current_player))

@@ -190,7 +190,7 @@ class TestAnimationState:
 class TestDrawFunctions:
     """Testa funções de desenho (com mocks de pygame)."""
     
-    @patch('src.interfaces.gui.pygame.draw.line')
+    @patch('src.interfaces.gui.renderer.pygame.draw.line')
     def test_draw_vertical_gradient(self, mock_draw_line):
         """Gradiente deve desenhar linhas do topo ao fundo."""
         from src.interfaces.gui import _draw_vertical_gradient, WINDOW_HEIGHT
@@ -202,8 +202,8 @@ class TestDrawFunctions:
         # Deve chamar draw.line para cada linha de altura
         assert mock_draw_line.call_count == WINDOW_HEIGHT
     
-    @patch('src.interfaces.gui.pygame.draw.circle')
-    @patch('src.interfaces.gui.pygame.Surface')
+    @patch('src.interfaces.gui.renderer.pygame.draw.circle')
+    @patch('src.interfaces.gui.renderer.pygame.Surface')
     def test_draw_glow_circle(self, mock_surface, mock_draw):
         """Glow circle deve desenhar múltiplos círculos."""
         from src.interfaces.gui import _draw_glow_circle
@@ -329,9 +329,9 @@ class TestDifficulty:
         assert "Difícil" in Difficulty.HARD.value[1]
     
     def test_difficulty_extreme(self):
-        """Dificuldade Extreme = 2000 iterações."""
+        """Dificuldade Extreme = 10000 iterações."""
         from src.interfaces.gui import Difficulty
-        assert Difficulty.EXTREME.value[0] == 2000
+        assert Difficulty.EXTREME.value[0] == 10000
         assert "Extremo" in Difficulty.EXTREME.value[1]
 
 

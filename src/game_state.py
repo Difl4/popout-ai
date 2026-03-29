@@ -6,8 +6,8 @@ import pickle
 from pathlib import Path
 from typing import NamedTuple
 
-from .engine.bitboard import PopOutBoard
-from .interfaces.gui import Difficulty
+from src.engine.standard.bitboard import PopOutBoard
+from src.interfaces.gui.state import Difficulty
 
 
 class GameState(NamedTuple):
@@ -142,7 +142,7 @@ class GameSaveManager:
 
 if __name__ == "__main__":
     # Exemplo de uso
-    from .engine.bitboard import PopOutBoard
+    from src.engine.standard.bitboard import PopOutBoard
     
     # Cria estado de exemplo
     board = PopOutBoard()

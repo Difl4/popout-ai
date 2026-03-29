@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .base import BaseMCTS
+from src.algorithms.mcts.standard.base import BaseMCTS
 
 
 class StandardUCT(BaseMCTS):

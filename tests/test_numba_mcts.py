@@ -10,10 +10,10 @@ import time
 
 import pytest
 
-from src.engine.bitboard import PopOutBoard
-from src.algorithms.mcts.base import BaseMCTS, MCTSNode
+from src.engine.standard.bitboard import PopOutBoard
+from src.algorithms.mcts.standard.base import BaseMCTS, MCTSNode
 from src.algorithms.mcts.protocol import MCTSEngine
-from src.algorithms.mcts.numba_mcts import FlatNumbaMCTS, NumbaMCTS, warmup
+from src.algorithms.mcts.optimized.numba_mcts import FlatNumbaMCTS, NumbaMCTS, warmup
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -1,5 +1,5 @@
 import pytest
-from src.engine.bitboard import COLS, ROWS, COL_SIZE, PopOutBoard
+from src.engine.standard.bitboard import COLS, ROWS, COL_SIZE, PopOutBoard
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 import pytest
 
-from src.engine.bitboard import PopOutBoard
+from src.engine.standard.bitboard import PopOutBoard
 from src.game_state import GameState, GameSaveManager, Difficulty
 
 

@@ -4,10 +4,10 @@ import pytest
 import time
 import pandas as pd
 
-from src.algorithms.id3.learner import ID3Classifier
-from src.engine.bitboard import PopOutBoard
-from src.algorithms.mcts.uct_standard import StandardUCT
-from src.algorithms.mcts.uct_experimental import ExperimentalUCT
+from src.ml.id3.learner import ID3Classifier
+from src.engine.standard.bitboard import PopOutBoard
+from src.algorithms.mcts.standard.uct_standard import StandardUCT
+from src.algorithms.mcts.standard.uct_experimental import ExperimentalUCT
 
 
 class TestBitboardPerformance:

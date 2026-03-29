@@ -6,11 +6,11 @@ import pytest
 import tempfile
 from pathlib import Path
 
-from src.engine.bitboard import PopOutBoard
-from src.engine.rules import evaluate_after_move
-from src.algorithms.mcts.uct_standard import StandardUCT
-from src.algorithms.id3.learner import ID3Classifier
-from src.scripts.bulk_generate import generate_dataset
+from src.engine.standard.bitboard import PopOutBoard
+from src.engine.standard.rules import evaluate_after_move
+from src.algorithms.mcts.standard.uct_standard import StandardUCT
+from src.ml.id3.learner import ID3Classifier
+from src.ml.dataset_generator import generate_dataset
 
 
 class TestFullMCTSGameFlow:

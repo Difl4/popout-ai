@@ -8,9 +8,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..algorithms.mcts.uct_experimental import ExperimentalUCT
-from ..algorithms.mcts.uct_standard import StandardUCT
-from ..engine.bitboard import PopOutBoard
+from src.algorithms.factory import get_agent
+from src.engine.standard.bitboard import PopOutBoard
 
 
 def make_agent(variant: str, seed: int | None = None):
@@ -21,8 +20,6 @@ def make_agent(variant: str, seed: int | None = None):
         variant (str): Nome da variante.
             'uct_standard'     — Python MCTS padrão.
             'uct_experimental' — Python MCTS experimental.
-            'numba'            — NumbaMCTS (Numba simulate).
-            'flat_numba'       — FlatNumbaMCTS (loop inteiro em Numba, mais rápido).
         seed (int | None): Semente opcional.
 
     Returns:
@@ -30,18 +27,19 @@ def make_agent(variant: str, seed: int | None = None):
 
     Raises:
         ValueError: Se variante for desconhecida.
+        TypeError: Se os tipos dos argumentos forem inválidos.
     """
     if not isinstance(variant, str):
         raise TypeError(f"variant deve ser string, recebeu {type(variant).__name__}")
     if seed is not None and not isinstance(seed, int):
         raise TypeError(f"seed deve ser int ou None, recebeu {type(seed).__name__}")
-    mapping: dict[str, Type] = {
-        "uct_standard": StandardUCT,
-        "uct_experimental": ExperimentalUCT,
+    _variant_map: dict[str, str] = {
+        "uct_standard": "standard",
+        "uct_experimental": "experimental",
     }
-    if variant not in mapping:
+    if variant not in _variant_map:
         raise ValueError(f"Variante desconhecida: {variant}")
-    return mapping[variant](seed=seed)
+    return get_agent(_variant_map[variant], seed=seed)
 
 
 def randomize_state(steps: int, rng: random.Random) -> PopOutBoard:
@@ -54,7 +52,7 @@ def randomize_state(steps: int, rng: random.Random) -> PopOutBoard:
 
     Returns:
         PopOutBoard: Estado resultante.
-        
+
     Raises:
         TypeError: If steps is not int or rng is not random.Random.
         ValueError: If steps is negative.
@@ -64,11 +62,11 @@ def randomize_state(steps: int, rng: random.Random) -> PopOutBoard:
         raise TypeError(f"steps must be int, got {type(steps).__name__}")
     if not isinstance(rng, random.Random):
         raise TypeError(f"rng must be random.Random, got {type(rng).__name__}")
-    
+
     # Value validation
     if steps < 0:
         raise ValueError(f"steps must be non-negative, got {steps}")
-    
+
     board = PopOutBoard()
     for _ in range(steps):
         legal = board.legal_moves()
@@ -96,7 +94,7 @@ def generate_dataset(
 
     Returns:
         pd.DataFrame: Dataset com features do estado e rótulo da jogada.
-        
+
     Raises:
         TypeError: If parameters have wrong types.
         ValueError: If parameters are out of valid ranges.
@@ -110,7 +108,7 @@ def generate_dataset(
         raise TypeError(f"iterations must be int, got {type(iterations).__name__}")
     if not isinstance(seed, int) or isinstance(seed, bool):
         raise TypeError(f"seed must be int, got {type(seed).__name__}")
-    
+
     # Value validation
     if n_samples <= 0:
         raise ValueError(f"n_samples must be positive, got {n_samples}")
@@ -118,7 +116,7 @@ def generate_dataset(
         raise ValueError(f"iterations must be positive, got {iterations}")
     if seed < 0:
         raise ValueError(f"seed must be non-negative, got {seed}")
-    
+
     rng = random.Random(seed)
     agent = make_agent(variant, seed=seed)
 
@@ -135,22 +133,22 @@ def generate_dataset(
         try:
             best_move_int = agent.run(board, iterations=iterations)
         except (TimeoutError, RuntimeError, Exception) as e:
-            print(f"  ⚠️  Amostra {i}: Erro ao correr MCTS: {type(e).__name__}: {e}")
+            print(f"  Amostra {i}: Erro ao correr MCTS: {type(e).__name__}: {e}")
             skipped += 1
             continue
-        
+
         # Converter inteiro (0-13) para tuplo (tipo, coluna)
         if best_move_int < 7:
             best_move = ("drop", best_move_int)
         else:
             best_move = ("pop", best_move_int - 7)
-        
+
         features = board.to_feature_dict()
         features["best_move"] = f"{best_move[0]}_{best_move[1]}"
         rows.append(features)
 
     if skipped > 0:
-        print(f"  ℹ️  {skipped} amostras puladas por erro.")
+        print(f"  {skipped} amostras puladas por erro.")
 
     return pd.DataFrame(rows)
 

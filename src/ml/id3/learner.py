@@ -70,7 +70,7 @@ class ID3Classifier:
 
         Returns:
             float: Entropia em bits.
-            
+
         OTIMIZAÇÃO: Vetorizado com NumPy para evitar lambda.
         """
         probs = labels.value_counts(normalize=True).values
@@ -188,7 +188,7 @@ class ID3Classifier:
         Args:
             df (pd.DataFrame): Dataset com features e alvo.
             target (str): Nome da coluna target.
-            
+
         Raises:
             ValueError: Se df é None, vazio, contém NaN ou target não existe.
             TypeError: Se df não é DataFrame ou target não é string.
@@ -198,20 +198,20 @@ class ID3Classifier:
             raise TypeError(f"Expected DataFrame, got {type(df).__name__}")
         if not isinstance(target, str):
             raise TypeError(f"Expected target name as string, got {type(target).__name__}")
-        
+
         # Empty validation
         if df.empty:
             raise ValueError("DataFrame is empty")
-        
+
         # Target exists validation
         if target not in df.columns:
             raise ValueError(f"Target column '{target}' not found in DataFrame. Available columns: {list(df.columns)}")
-        
+
         # NaN validation
         if df.isnull().any().any():
             nan_cols = df.columns[df.isnull().any()].tolist()
             raise ValueError(f"DataFrame contains NaN values in columns: {nan_cols}")
-        
+
         self.target_name = target
         features = [c for c in df.columns if c != target]
         self.root = self.build_tree(df, features, target, depth=0)
@@ -248,12 +248,12 @@ class ID3Classifier:
 
         Returns:
             pd.Series: Previsões.
-            
+
         OTIMIZAÇÃO: Usa list comprehension em vez de apply().
         """
         if self.root is None:
             raise ValueError("Modelo ainda não treinado.")
-        
+
         predictions = [self.predict_one(row) for _, row in df.iterrows()]
         return pd.Series(predictions, index=df.index)
 
@@ -322,7 +322,7 @@ class ID3Classifier:
 
         return importance
 
-    def print_tree(self, node: Optional[DecisionNode] = None, prefix: str = "", 
+    def print_tree(self, node: Optional[DecisionNode] = None, prefix: str = "",
                    value_label: str = "") -> None:
         """
         Imprime a árvore de decisão com ASCII art.

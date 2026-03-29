@@ -3,7 +3,7 @@
 import pytest
 import pandas as pd
 
-from src.algorithms.id3.learner import DecisionNode, ID3Classifier
+from src.ml.id3.learner import DecisionNode, ID3Classifier
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────

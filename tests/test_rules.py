@@ -2,8 +2,8 @@
 
 import pytest
 
-from src.engine.bitboard import COLS, ROWS, COL_SIZE, PopOutBoard
-from src.engine.rules import (
+from src.engine.standard.bitboard import COLS, ROWS, COL_SIZE, PopOutBoard
+from src.engine.standard.rules import (
     board_signature,
     check_winner_for_player,
     evaluate_after_move,

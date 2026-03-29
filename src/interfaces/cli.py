@@ -11,12 +11,12 @@ from __future__ import annotations
 from collections import Counter
 from typing import Optional
 
-from ..algorithms.mcts.uct_experimental import ExperimentalUCT
-from ..algorithms.mcts.uct_standard import StandardUCT
-from ..algorithms.mcts.protocol import MCTSEngine
-from ..algorithms.mcts.numba_mcts import FlatNumbaMCTS
-from ..engine.bitboard import PopOutBoard
-from ..engine.rules import board_signature, evaluate_after_move, is_threefold_repetition
+from src.algorithms.mcts.standard.uct_experimental import ExperimentalUCT
+from src.algorithms.mcts.standard.uct_standard import StandardUCT
+from src.algorithms.mcts.protocol import MCTSEngine
+from src.algorithms.mcts.optimized.numba_mcts import FlatNumbaMCTS
+from src.engine.standard.bitboard import PopOutBoard
+from src.engine.standard.rules import board_signature, evaluate_after_move, is_threefold_repetition
 
 
 # ── Utilitários de parsing e display ─────────────────────────────────────────

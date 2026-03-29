@@ -2,7 +2,8 @@
 
 Single Responsibility: this module owns the two accelerated MCTS classes
 (NumbaMCTS and FlatNumbaMCTS) and the warmup helper. All JIT kernel
-functions live in kernels.py.
+functions live in src/engine/optimized/numba_rules.py and
+src/algorithms/mcts/optimized/numba_search.py.
 
 Classes
 -------
@@ -20,9 +21,9 @@ from typing import Optional
 
 import numpy as np
 
-from ...engine.bitboard import PopOutBoard
-from .base import BaseMCTS, MCTSNode
-from .kernels import (
+from src.engine.standard.bitboard import PopOutBoard
+from src.algorithms.mcts.standard.base import BaseMCTS, MCTSNode
+from src.algorithms.mcts.optimized.numba_search import (
     nb_expand_step,
     nb_mcts_run,
     nb_simulate,
@@ -35,7 +36,7 @@ class _NumbaNode(MCTSNode):
     """MCTSNode whose __post_init__ skips the Python legal_moves() call.
 
     NumbaMCTS.expand() populates untried_moves via nb_expand_step instead,
-    avoiding a redundant Python↔bitboard round-trip.
+    avoiding a redundant Python<->bitboard round-trip.
     """
 
     def __post_init__(self) -> None:
@@ -47,10 +48,10 @@ class NumbaMCTS(BaseMCTS):
 
     Improvements over BaseMCTS
     --------------------------
-    simulate  — replaced by nb_simulate (@njit, pure int64 arithmetic).
-    expand    — single nb_expand_step call (apply + evaluate + legal_moves)
+    simulate  -- replaced by nb_simulate (@njit, pure int64 arithmetic).
+    expand    -- single nb_expand_step call (apply + evaluate + legal_moves)
                 + O(1) swap-pop removal from untried_moves list.
-    best_child — log(node.visits) cached once per call (BaseMCTS recomputes
+    best_child -- log(node.visits) cached once per call (BaseMCTS recomputes
                  it per child); q() inlined; exploration_c bound as local.
 
     Call warmup() once before benchmarking to pay the JIT cost upfront.
@@ -139,7 +140,7 @@ class FlatNumbaMCTS:
     ------------
     Tree nodes live in pre-allocated numpy arrays indexed by node ID.
     A single call to nb_mcts_run() runs all iterations in compiled code,
-    paying the Python↔JIT crossing cost only once per search.
+    paying the Python<->JIT crossing cost only once per search.
 
     The arrays are allocated once in __init__ and reused across calls.
     Root slot (index 0) is re-initialised at the start of each run().
@@ -201,12 +202,12 @@ class FlatNumbaMCTS:
 def warmup() -> None:
     """Trigger JIT compilation of all @njit functions once.
 
-    Call this once at startup (~1–3 s); subsequent calls return immediately
+    Call this once at startup (~1-3 s); subsequent calls return immediately
     because Numba caches compiled functions to disk.
 
     Usage::
 
-        from src.algorithms.mcts import warmup, FlatNumbaMCTS
+        from src.algorithms.mcts.optimized.numba_mcts import warmup, FlatNumbaMCTS
         warmup()
         move = FlatNumbaMCTS().run(board, iterations=100_000)
     """

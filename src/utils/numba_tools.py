@@ -3,12 +3,11 @@
 
 Run this whenever you change a constant or logic inside kernels.py:
 
-    python recompile_numba.py
+    python -m src.utils.numba_tools
 """
 
 import glob
 import os
-import sys
 
 
 def clear_numba_cache(root: str = ".") -> int:
@@ -26,7 +25,8 @@ def clear_numba_cache(root: str = ".") -> int:
     return deleted
 
 
-if __name__ == "__main__":
+def recompile() -> None:
+    """Clear Numba cache and trigger warmup recompilation."""
     print("=== Clearing Numba cache ===")
     n = clear_numba_cache()
     print(f"Deleted {n} cache file(s).\n")
@@ -35,3 +35,7 @@ if __name__ == "__main__":
     from src.algorithms.mcts import warmup
     warmup()
     print("Done. All @njit functions recompiled and cached.")
+
+
+if __name__ == "__main__":
+    recompile()
