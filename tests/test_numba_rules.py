@@ -14,13 +14,8 @@ import numpy as np
 
 from src.engine.standard.bitboard import PopOutBoard
 from src.engine.standard.rules import has_won, evaluate_after_move
-from src.engine.optimized.numba_rules import (
-    nb_has_won,
-    nb_legal_moves,
-    nb_apply_move,
-    nb_evaluate_after_move,
-    nb_is_full,
-)
+from src.engine.optimized.numba_bitboard import nb_apply_move, nb_is_full, nb_legal_moves
+from src.engine.optimized.numba_rules import nb_evaluate_after_move, nb_has_won
 
 
 @pytest.fixture(scope="session", autouse=True)

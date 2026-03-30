@@ -18,13 +18,8 @@ import math
 import numpy as np
 from numba import njit
 
-from src.engine.optimized.numba_rules import (
-    nb_apply_move,
-    nb_evaluate_after_move,
-    nb_has_won,
-    nb_is_full,
-    nb_legal_moves,
-)
+from src.engine.optimized.numba_bitboard import nb_apply_move, nb_is_full, nb_legal_moves
+from src.engine.optimized.numba_rules import nb_evaluate_after_move, nb_is_threefold_repetition
 
 
 @njit(cache=True)
@@ -75,11 +70,7 @@ def nb_simulate(
         if nb_is_full(mask_p1, mask_p2):
             return np.float64(0.5)
 
-        rep_count = np.int32(0)
-        for i in range(hist_size):
-            if hist_p1[i] == mask_p1 and hist_p2[i] == mask_p2:
-                rep_count += np.int32(1)
-        if rep_count >= 3:
+        if nb_is_threefold_repetition(hist_p1, hist_p2, hist_size):
             return np.float64(0.5)
 
         moves, n_moves = nb_legal_moves(mask_p1, mask_p2, current_player)
