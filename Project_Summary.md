@@ -125,12 +125,17 @@
 ### File: `__init__.py`
   - Contains helper logic/imports.
 
-### File: `numba_rules.py`
-  - Function: `nb_has_won()`  | 4-in-a-row check via bitwise shifts. Mirrors rules.has_won.
+### File: `numba_bitboard.py`
   - Function: `nb_legal_moves()`  | Return (moves_array, n) with legal move ints in moves_array[:n].
   - Function: `nb_apply_move()`  | Apply move (0-13) and return (new_mask_p1, new_mask_p2, next_player).
-  - Function: `nb_evaluate_after_move()`  | Mirrors rules.evaluate_after_move — PopOut tiebreak rule included.
   - Function: `nb_is_full()`  | True when every column's top row bit is occupied.
+
+### File: `numba_rules.py`
+  - Function: `nb_has_won()`  | 4-in-a-row check via bitwise shifts. Mirrors rules.has_won.
+  - Function: `nb_check_winner_for_player()`  | Mirrors rules.check_winner_for_player.
+  - Function: `nb_evaluate_after_move()`  | Mirrors rules.evaluate_after_move — PopOut tiebreak rule included.
+  - Function: `nb_is_threefold_repetition()`  | Mirrors rules.is_threefold_repetition.
+  - Function: `nb_is_draw()`  | Mirrors rules.is_draw — full board or threefold repetition.
 ## Directory: src/engine/standard
 ### File: `__init__.py`
   - Contains helper logic/imports.
@@ -701,10 +706,10 @@ Functions you wrote, sorted by how often they are used in this project:
 * `_make_board_with`: 12 calls
 * `randomize_state`: 11 calls
 * `is_full`: 11 calls
+* `nb_has_won`: 11 calls
 * `make_agent`: 11 calls
 * `score`: 10 calls
 * `nb_apply_move`: 10 calls
-* `nb_has_won`: 10 calls
 * `_column_from_mouse`: 10 calls
 * `_h_mask`: 10 calls
 * `GameState`: 9 calls
@@ -739,13 +744,13 @@ Functions you wrote, sorted by how often they are used in this project:
 * `reset_game`: 5 calls
 * `predict_one`: 5 calls
 * `_board_ints`: 5 calls
+* `nb_is_full`: 4 calls
 * `best_child`: 4 calls
 * `has_won`: 4 calls
 * `update`: 4 calls
 * `_simple_pure_dataset`: 4 calls
 * `get_save_info`: 3 calls
 * `nb_expand_step`: 3 calls
-* `nb_is_full`: 3 calls
 * `simulate`: 3 calls
 * `q`: 3 calls
 * `_check_winner`: 3 calls
@@ -760,6 +765,7 @@ Functions you wrote, sorted by how often they are used in this project:
 * `main`: 2 calls
 * `run_cli_game`: 2 calls
 * `__init__`: 2 calls
+* `nb_is_threefold_repetition`: 2 calls
 * `select`: 2 calls
 * `backpropagate`: 2 calls
 * `run_hvc`: 2 calls

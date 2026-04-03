@@ -37,7 +37,7 @@ class MCTSNode:
         return 0.0 if self.visits == 0 else self.value_sum / self.visits
 
 class BaseMCTS:
-    def __init__(self, exploration_c: float = 1.414, rollout_depth: int = 50, seed: Optional[int] = None) -> None:
+    def __init__(self, exploration_c: float = 1.414, rollout_depth: int = 150, seed: Optional[int] = None) -> None:
         self.exploration_c = exploration_c
         self.rollout_depth = rollout_depth
         self.random = random.Random(seed)

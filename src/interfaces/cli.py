@@ -11,10 +11,8 @@ from __future__ import annotations
 from collections import Counter
 from typing import Optional
 
-from src.algorithms.mcts.standard.uct_experimental import ExperimentalUCT
-from src.algorithms.mcts.standard.uct_standard import StandardUCT
+from src.algorithms.factory import get_agent
 from src.algorithms.mcts.protocol import MCTSEngine
-from src.algorithms.mcts.optimized.numba_mcts import FlatNumbaMCTS
 from src.engine.standard.bitboard import PopOutBoard
 from src.engine.standard.rules import board_signature, evaluate_after_move, is_threefold_repetition
 
@@ -135,15 +133,16 @@ def run_hvh() -> None:
 
 # ── Modo 2: Humano vs Computador ─────────────────────────────────────────────
 
-def run_hvc(iterations: int = 1000, human_player: int = 1) -> None:
-    """Jogo Humano vs Computador (MCTS Standard).
+def run_hvc(iterations: int = 1000, human_player: int = 1, agent_name: str = "standard") -> None:
+    """Jogo Humano vs Computador (MCTS).
 
     Args:
         iterations (int): Iterações MCTS por jogada da IA.
         human_player (int): Qual jogador é humano (1 ou 2).
+        agent_name (str): Nome do agente (standard, solver, experimental, numba, flat_numba).
     """
     board = PopOutBoard()
-    ai = StandardUCT(seed=42)
+    ai = get_agent(agent_name, seed=42)
     history: list = []
 
     human_symbol = "X" if human_player == 1 else "O"
@@ -152,7 +151,7 @@ def run_hvc(iterations: int = 1000, human_player: int = 1) -> None:
     print("=" * 40)
     print("  POPOUT — Humano vs Computador")
     print("=" * 40)
-    print(f"Tu és {human_symbol} (Jogador {human_player})  |  IA é {ai_symbol}  |  {iterations} iterações MCTS")
+    print(f"Tu és {human_symbol} (Jogador {human_player})  |  IA é {ai_symbol} [{agent_name}]  |  {iterations} iterações MCTS")
     print("Comandos: d<col> (drop), p<col> (pop). Ex.: d3, p0\n")
 
     while True:
@@ -263,40 +262,72 @@ def run_cvc(
     return -1
 
 
-def run_cvc_tournament(
-    n_games: int = 40,
-    iterations1: int = 300,
-    iterations2: int = 300,
-) -> None:
-    """Torneio automático: StandardUCT vs ExperimentalUCT.
+_AGENTS = {
+    "1": ("standard",   "StandardUCT"),
+    "2": ("experimental", "ExperimentalUCT"),
+    "3": ("solver",     "SolverMCTS"),
+    "4": ("numba",      "NumbaMCTS"),
+    "5": ("flat_numba", "FlatNumbaMCTS"),
+}
 
-    Alterna as cores entre jogos para resultados justos.
 
-    Args:
-        n_games (int): Número total de jogos.
-        iterations1 (int): Iterações do StandardUCT.
-        iterations2 (int): Iterações do ExperimentalUCT.
-    """
+def _ask_int(prompt: str, default: int, min_val: int = 1) -> int:
+    """Pede um inteiro ao utilizador; usa default se vazio."""
+    while True:
+        raw = input(f"{prompt} [{default}]: ").strip()
+        if not raw:
+            return default
+        try:
+            val = int(raw)
+            if val < min_val:
+                print(f"  ⚠  Valor mínimo: {min_val}.")
+                continue
+            return val
+        except ValueError:
+            print("  ⚠  Introduz um número inteiro.")
+
+
+def _ask_agent(label: str) -> tuple[str, str]:
+    """Mostra lista de agentes e devolve (agent_key, display_name)."""
+    print(f"\n  Escolhe o {label}:")
+    for key, (_, name) in _AGENTS.items():
+        print(f"    {key}. {name}")
+    while True:
+        choice = input(f"  Opção: ").strip()
+        if choice in _AGENTS:
+            key, name = _AGENTS[choice]
+            return key, name
+        print("  ⚠  Opção inválida.")
+
+
+def run_cvc_tournament() -> None:
+    """Torneio configurável via terminal entre dois agentes MCTS."""
+    print("=" * 50)
+    print("  TORNEIO — Configuração")
+    print("=" * 50)
+
+    key1, name1 = _ask_agent("Agente 1")
+    key2, name2 = _ask_agent("Agente 2")
+    n_games    = _ask_int("\n  Número de jogos", default=10)
+    iters1     = _ask_int(f"  Iterações para {name1}", default=1000)
+    iters2     = _ask_int(f"  Iterações para {name2}", default=1000)
+
     results: Counter = Counter()
 
+    print()
     print("=" * 50)
-    print("  TORNEIO: StandardUCT vs ExperimentalUCT")
+    print(f"  TORNEIO: {name1} vs {name2}")
     print("=" * 50)
-    print(f"  {n_games} jogos  |  Standard={iterations1} iter  |  Experimental={iterations2} iter\n")
+    print(f"  {n_games} jogos  |  {name1}={iters1} iter  |  {name2}={iters2} iter\n")
 
     for i in range(n_games):
-        # Alternamos quem começa para eliminar vantagem de primeiro jogador.
-        # As iterações acompanham o algoritmo, não a posição (1º/2º jogador).
+        # Alternar cores para resultados justos
         if i % 2 == 0:
-            a1 = FlatNumbaMCTS(seed=i)
-            a2 = FlatNumbaMCTS(seed=i)
-            n1, n2 = "Standard", "Experimental"
-            i1, i2 = iterations1, iterations2
+            a1, a2 = get_agent(key1, seed=i), get_agent(key2, seed=i)
+            n1, n2, i1, i2 = name1, name2, iters1, iters2
         else:
-            a1 = FlatNumbaMCTS(seed=i)
-            a2 = FlatNumbaMCTS(seed=i)
-            n1, n2 = "Experimental", "Standard"
-            i1, i2 = iterations2, iterations1  # Experimental=100k, Standard=10k
+            a1, a2 = get_agent(key2, seed=i), get_agent(key1, seed=i)
+            n1, n2, i1, i2 = name2, name1, iters2, iters1
 
         result = run_cvc(
             agent1=a1, agent2=a2,
@@ -305,7 +336,6 @@ def run_cvc_tournament(
             verbose=False,
         )
 
-        # Mapear resultado para o algoritmo (não para o jogador)
         if result == -1:
             results["Empate"] += 1
             outcome = "Empate"
@@ -351,9 +381,11 @@ def run_cli_game(iterations: int = 1000) -> None:
     if choice == "1":
         run_hvh()
     elif choice == "2":
-        run_hvc(iterations=iterations)
+        agent_key, agent_display = _ask_agent("agente IA")
+        iters = _ask_int(f"  Iterações para {agent_display}", default=iterations)
+        run_hvc(iterations=iters, agent_name=agent_key)
     elif choice == "3":
-        run_cvc_tournament(n_games=40, iterations1=10000, iterations2=100000)
+        run_cvc_tournament()
     else:
         print(f"Opção '{choice}' inválida. A iniciar modo padrão (Humano vs Computador).")
         run_hvc(iterations=iterations)

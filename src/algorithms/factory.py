@@ -35,6 +35,9 @@ def get_agent(name: str, **kwargs: Any):
     elif name == "experimental":
         from src.algorithms.mcts.standard.uct_experimental import ExperimentalUCT
         return ExperimentalUCT(**kwargs)
+    elif name == "solver":
+        from src.algorithms.mcts.standard.uct_solver import SolverMCTS
+        return SolverMCTS(**kwargs)
     elif name == "numba":
         from src.algorithms.mcts.optimized.numba_mcts import NumbaMCTS
         return NumbaMCTS(**kwargs)
@@ -43,5 +46,5 @@ def get_agent(name: str, **kwargs: Any):
         return FlatNumbaMCTS(**kwargs)
     else:
         raise ValueError(
-            f"Unknown agent '{name}'. Valid names: standard, experimental, numba, flat_numba."
+            f"Unknown agent '{name}'. Valid names: standard, experimental, solver, numba, flat_numba."
         )

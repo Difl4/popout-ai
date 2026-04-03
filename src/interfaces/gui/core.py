@@ -59,7 +59,7 @@ def _make_ai_engine(difficulty: Difficulty) -> MCTSEngine:
         from src.algorithms.mcts.optimized.numba_mcts import warmup
         warmup()
         return get_agent("flat_numba")
-    return get_agent("standard", seed=42)
+    return get_agent(difficulty.engine_type, seed=42)
 
 
 def launch_gui() -> None:
