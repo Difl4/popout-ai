@@ -49,16 +49,18 @@ def _encode_move(column: int, mode_pop: bool) -> int:
     return column + 7 if mode_pop else column
 
 
+_NUMBA_ENGINES = {"numba", "flat_numba", "numba_solver", "flat_numba_solver"}
+
+
 def _make_ai_engine(difficulty: Difficulty) -> MCTSEngine:
     """Instantiate the correct AI engine for the given difficulty level.
 
-    Calling warmup() when switching to a Numba-based engine ensures JIT
-    compilation happens at difficulty-change time (not mid-game).
+    Calling warmup() for any Numba-based engine ensures JIT compilation
+    happens at difficulty-change time rather than mid-game.
     """
-    if difficulty.engine_type == "flat_numba":
+    if difficulty.engine_type in _NUMBA_ENGINES:
         from src.algorithms.mcts.optimized.numba_mcts import warmup
         warmup()
-        return get_agent("flat_numba")
     return get_agent(difficulty.engine_type, seed=42)
 
 

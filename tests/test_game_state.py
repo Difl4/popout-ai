@@ -189,7 +189,7 @@ class TestGameSaveManager:
         info = manager.get_save_info()
         assert info is not None
         assert info["game_mode"] == "IA"
-        assert "Difícil" in info["difficulty"]
+        assert "Hard" in info["difficulty"]
         assert info["move_count"] == 42
         assert info["game_over"] is True
         assert info["winner"] == 1

@@ -263,11 +263,13 @@ def run_cvc(
 
 
 _AGENTS = {
-    "1": ("standard",   "StandardUCT"),
-    "2": ("experimental", "ExperimentalUCT"),
-    "3": ("solver",     "SolverMCTS"),
-    "4": ("numba",      "NumbaMCTS"),
-    "5": ("flat_numba", "FlatNumbaMCTS"),
+    "1": ("standard",          "StandardUCT"),
+    "2": ("experimental",      "ExperimentalUCT"),
+    "3": ("solver",            "SolverMCTS"),
+    "4": ("numba",             "NumbaMCTS"),
+    "5": ("flat_numba",        "FlatNumbaMCTS"),
+    "6": ("numba_solver",      "NumbaSolverMCTS"),
+    "7": ("flat_numba_solver", "FlatNumbaSolverMCTS"),
 }
 
 

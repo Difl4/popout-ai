@@ -54,13 +54,15 @@ class AnimationState:
 
 
 class Difficulty(Enum):
-    """Níveis de dificuldade para IA."""
-    EASY          = (100,     "Fácil (100)",          "standard")
-    MEDIUM        = (500,     "Médio (500)",           "standard")
-    HARD          = (1000,    "Difícil (1000)",        "standard")
-    EXTREME       = (10000,   "Extremo (10k)",         "standard")
-    SOLVER        = (10000,    "Solver (10k)",           "solver")
-    EXTREME_NUMBA = (100_000, "Extremo Numba (100k)",  "flat_numba")
+    """Difficulty levels for the AI opponent."""
+    EASY               = (100,     "Easy (100)",              "standard")
+    MEDIUM             = (500,     "Medium (500)",            "standard")
+    HARD               = (1000,    "Hard (1k)",               "standard")
+    EXTREME            = (10000,   "Extreme (10k)",           "standard")
+    SOLVER             = (10000,   "Solver (10k)",            "solver")
+    EXTREME_NUMBA      = (100_000, "Extreme Numba (100k)",    "flat_numba")
+    NUMBA_SOLVER       = (10000,   "Numba Solver (10k)",      "numba_solver")
+    FLAT_NUMBA_SOLVER  = (100_000, "Flat Numba Solver (100k)","flat_numba_solver")
 
     @property
     def iterations(self) -> int:

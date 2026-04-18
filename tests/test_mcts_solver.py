@@ -52,8 +52,12 @@ class TestSolverNode:
         assert len(node.untried_moves) == 7  # empty board: 7 drops only
 
     def test_terminal_node_sets_loss_status(self):
-        """A node reached after the opponent won is a forced loss for current player."""
-        node = _make_solver_node(terminal_winner=1)
+        """A node reached after the opponent won is a forced loss for current player.
+
+        Default board has current_player=1.  terminal_winner=2 means player 2
+        just won, so player 1 (current) is in a forced loss.
+        """
+        node = _make_solver_node(terminal_winner=2)
         assert node.status == STATUS_LOSS
         assert node.distance == 0
         assert node.is_terminal is True

@@ -202,8 +202,9 @@ class FlatNumbaMCTS:
 def warmup() -> None:
     """Trigger JIT compilation of all @njit functions once.
 
-    Call this once at startup (~1-3 s); subsequent calls return immediately
-    because Numba caches compiled functions to disk.
+    Covers both plain MCTS and solver MCTS kernels.  Call once at startup
+    (~1-3 s); subsequent calls return immediately because Numba caches
+    compiled functions to disk.
 
     Usage::
 
@@ -211,6 +212,8 @@ def warmup() -> None:
         warmup()
         move = FlatNumbaMCTS().run(board, iterations=100_000)
     """
+    from src.algorithms.mcts.optimized.numba_solver import warmup_solver
     dummy = PopOutBoard()
     NumbaMCTS(rollout_depth=10).run(dummy, iterations=1)
     FlatNumbaMCTS(rollout_depth=10).run(dummy, iterations=1)
+    warmup_solver()

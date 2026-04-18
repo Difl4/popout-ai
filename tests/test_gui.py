@@ -314,25 +314,25 @@ class TestDifficulty:
         """Dificuldade Easy = 100 iterações."""
         from src.interfaces.gui import Difficulty
         assert Difficulty.EASY.value[0] == 100
-        assert "Fácil" in Difficulty.EASY.value[1]
-    
+        assert "Easy" in Difficulty.EASY.value[1]
+
     def test_difficulty_medium(self):
         """Dificuldade Medium = 500 iterações."""
         from src.interfaces.gui import Difficulty
         assert Difficulty.MEDIUM.value[0] == 500
-        assert "Médio" in Difficulty.MEDIUM.value[1]
-    
+        assert "Medium" in Difficulty.MEDIUM.value[1]
+
     def test_difficulty_hard(self):
         """Dificuldade Hard = 1000 iterações."""
         from src.interfaces.gui import Difficulty
         assert Difficulty.HARD.value[0] == 1000
-        assert "Difícil" in Difficulty.HARD.value[1]
-    
+        assert "Hard" in Difficulty.HARD.value[1]
+
     def test_difficulty_extreme(self):
         """Dificuldade Extreme = 10000 iterações."""
         from src.interfaces.gui import Difficulty
         assert Difficulty.EXTREME.value[0] == 10000
-        assert "Extremo" in Difficulty.EXTREME.value[1]
+        assert "Extreme" in Difficulty.EXTREME.value[1]
 
 
 class TestPauseMenu:
