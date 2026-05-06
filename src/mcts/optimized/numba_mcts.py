@@ -3,7 +3,7 @@
 Single Responsibility: this module owns the two accelerated MCTS classes
 (NumbaMCTS and FlatNumbaMCTS) and the warmup helper. All JIT kernel
 functions live in src/engine/optimized/numba_rules.py and
-src/algorithms/mcts/optimized/numba_search.py.
+src/mcts/optimized/numba_search.py.
 
 Classes
 -------
@@ -22,8 +22,8 @@ from typing import Optional
 import numpy as np
 
 from src.engine.standard.bitboard import PopOutBoard
-from src.algorithms.mcts.standard.base import BaseMCTS, MCTSNode
-from src.algorithms.mcts.optimized.numba_search import (
+from src.mcts.standard.base import BaseMCTS, MCTSNode
+from src.mcts.optimized.numba_search import (
     nb_expand_step,
     nb_mcts_run,
     nb_simulate,
@@ -208,11 +208,11 @@ def warmup() -> None:
 
     Usage::
 
-        from src.algorithms.mcts.optimized.numba_mcts import warmup, FlatNumbaMCTS
+        from src.mcts.optimized.numba_mcts import warmup, FlatNumbaMCTS
         warmup()
         move = FlatNumbaMCTS().run(board, iterations=100_000)
     """
-    from src.algorithms.mcts.optimized.numba_solver import warmup_solver
+    from src.mcts.optimized.numba_solver import warmup_solver
     dummy = PopOutBoard()
     NumbaMCTS(rollout_depth=10).run(dummy, iterations=1)
     FlatNumbaMCTS(rollout_depth=10).run(dummy, iterations=1)

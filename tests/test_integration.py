@@ -8,9 +8,9 @@ from pathlib import Path
 
 from src.engine.standard.bitboard import PopOutBoard
 from src.engine.standard.rules import evaluate_after_move
-from src.algorithms.mcts.standard.uct_standard import StandardUCT
-from src.ml.id3.learner import ID3Classifier
-from src.ml.dataset_generator import generate_dataset
+from src.mcts.standard.uct_standard import StandardUCT
+from src.decision_tree.id3.learner import ID3Classifier
+from src.decision_tree.dataset_generator import generate_dataset
 
 
 class TestFullMCTSGameFlow:

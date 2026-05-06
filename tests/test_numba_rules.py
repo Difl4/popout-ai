@@ -21,7 +21,7 @@ from src.engine.optimized.numba_rules import nb_evaluate_after_move, nb_has_won
 @pytest.fixture(scope="session", autouse=True)
 def _warm_kernels():
     """Trigger JIT compilation once for the entire test session."""
-    from src.algorithms.mcts.optimized.numba_mcts import warmup
+    from src.mcts.optimized.numba_mcts import warmup
     warmup()
 
 

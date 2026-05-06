@@ -3,9 +3,9 @@
 import pytest
 import pandas as pd
 
-from src.ml.dataset_generator import generate_dataset, make_agent, randomize_state
-from src.algorithms.mcts.standard.uct_standard import StandardUCT
-from src.algorithms.mcts.standard.uct_experimental import ExperimentalUCT
+from src.decision_tree.dataset_generator import generate_dataset, make_agent, randomize_state
+from src.mcts.standard.uct_standard import StandardUCT
+from src.mcts.standard.uct_experimental import ExperimentalUCT
 from src.engine.standard.bitboard import COLS, ROWS, PopOutBoard
 
 import random

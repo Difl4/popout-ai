@@ -1,10 +1,10 @@
-"""Tests for SolverNode and SolverMCTS (src/algorithms/mcts/standard/uct_solver.py)."""
+"""Tests for SolverNode and SolverMCTS (src/mcts/standard/uct_solver.py)."""
 
 import pytest
 
 from src.engine.standard.bitboard import PopOutBoard
-from src.algorithms.mcts.standard.base import BaseMCTS
-from src.algorithms.mcts.standard.uct_solver import (
+from src.mcts.standard.base import BaseMCTS
+from src.mcts.standard.uct_solver import (
     SolverMCTS,
     SolverNode,
     STATUS_UNKNOWN,
@@ -12,8 +12,8 @@ from src.algorithms.mcts.standard.uct_solver import (
     STATUS_LOSS,
     STATUS_DRAW,
 )
-from src.algorithms.mcts.protocol import MCTSEngine
-from src.algorithms.factory import get_agent
+from src.mcts.protocol import MCTSEngine
+from src.mcts.factory import get_agent
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -344,7 +344,7 @@ class TestSolverVsFlatNumba:
     with both agents using 10 000 iterations — a fair head-to-head."""
 
     def test_wins_at_least_one_game(self):
-        from src.algorithms.mcts.optimized.numba_mcts import warmup
+        from src.mcts.optimized.numba_mcts import warmup
         from src.interfaces.cli import run_cvc
 
         warmup()  # JIT-compile numba kernels before timing starts

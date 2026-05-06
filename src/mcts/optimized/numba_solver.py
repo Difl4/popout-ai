@@ -24,7 +24,7 @@ from typing import Optional
 import numpy as np
 
 from src.engine.standard.bitboard import PopOutBoard
-from src.algorithms.mcts.standard.uct_solver import (
+from src.mcts.standard.uct_solver import (
     SolverMCTS,
     SolverNode,
     STATUS_WIN,
@@ -32,7 +32,7 @@ from src.algorithms.mcts.standard.uct_solver import (
     STATUS_DRAW,
     STATUS_UNKNOWN,
 )
-from src.algorithms.mcts.optimized.numba_search import (
+from src.mcts.optimized.numba_search import (
     nb_expand_step,
     nb_simulate,
     nb_solver_mcts_run,
@@ -217,7 +217,7 @@ def warmup_solver() -> None:
 
     Usage::
 
-        from src.algorithms.mcts.optimized.numba_solver import warmup_solver
+        from src.mcts.optimized.numba_solver import warmup_solver
         warmup_solver()
         move = FlatNumbaSolverMCTS().run(board, iterations=100_000)
     """

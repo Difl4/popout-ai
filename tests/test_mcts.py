@@ -1,12 +1,12 @@
-"""Testes para src/algorithms/mcts — BaseMCTS, StandardUCT, ExperimentalUCT."""
+"""Testes para src/mcts — BaseMCTS, StandardUCT, ExperimentalUCT."""
 
 import pytest
 
 from src.engine.standard.bitboard import COLS, ROWS, PopOutBoard
 from src.engine.standard.rules import evaluate_after_move
-from src.algorithms.mcts.standard.base import BaseMCTS, MCTSNode
-from src.algorithms.mcts.standard.uct_standard import StandardUCT
-from src.algorithms.mcts.standard.uct_experimental import ExperimentalUCT
+from src.mcts.standard.base import BaseMCTS, MCTSNode
+from src.mcts.standard.uct_standard import StandardUCT
+from src.mcts.standard.uct_experimental import ExperimentalUCT
 
 
 # ── MCTSNode ─────────────────────────────────────────────────────────────────

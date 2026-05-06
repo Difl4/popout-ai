@@ -1,10 +1,10 @@
-"""Testes para src/algorithms/id3/discretizer.py — discretização por quantis."""
+"""Testes para src/decision_tree/discretizer.py — discretização por quantis."""
 
 import pytest
 import pandas as pd
 
-from src.ml.discretizer import apply_bins, fit_quantile_bins
-from src.ml.id3.learner import ID3Classifier
+from src.decision_tree.discretizer import apply_bins, fit_quantile_bins
+from src.decision_tree.id3.learner import ID3Classifier
 
 
 # ── fit_quantile_bins ────────────────────────────────────────────────────────

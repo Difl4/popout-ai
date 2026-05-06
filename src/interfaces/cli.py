@@ -11,8 +11,8 @@ from __future__ import annotations
 from collections import Counter
 from typing import Optional
 
-from src.algorithms.factory import get_agent
-from src.algorithms.mcts.protocol import MCTSEngine
+from src.mcts.factory import get_agent
+from src.mcts.protocol import MCTSEngine
 from src.engine.standard.bitboard import PopOutBoard
 from src.engine.standard.rules import board_signature, evaluate_after_move, is_threefold_repetition
 

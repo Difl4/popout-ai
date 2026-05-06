@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.algorithms.factory import get_agent
+from src.mcts.factory import get_agent
 from src.engine.standard.bitboard import PopOutBoard
 
 

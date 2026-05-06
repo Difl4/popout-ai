@@ -30,25 +30,25 @@ def get_agent(name: str, **kwargs: Any):
         If *name* is not a known agent identifier.
     """
     if name == "standard":
-        from src.algorithms.mcts.standard.uct_standard import StandardUCT
+        from src.mcts.standard.uct_standard import StandardUCT
         return StandardUCT(**kwargs)
     elif name == "experimental":
-        from src.algorithms.mcts.standard.uct_experimental import ExperimentalUCT
+        from src.mcts.standard.uct_experimental import ExperimentalUCT
         return ExperimentalUCT(**kwargs)
     elif name == "solver":
-        from src.algorithms.mcts.standard.uct_solver import SolverMCTS
+        from src.mcts.standard.uct_solver import SolverMCTS
         return SolverMCTS(**kwargs)
     elif name == "numba":
-        from src.algorithms.mcts.optimized.numba_mcts import NumbaMCTS
+        from src.mcts.optimized.numba_mcts import NumbaMCTS
         return NumbaMCTS(**kwargs)
     elif name == "flat_numba":
-        from src.algorithms.mcts.optimized.numba_mcts import FlatNumbaMCTS
+        from src.mcts.optimized.numba_mcts import FlatNumbaMCTS
         return FlatNumbaMCTS(**kwargs)
     elif name == "numba_solver":
-        from src.algorithms.mcts.optimized.numba_solver import NumbaSolverMCTS
+        from src.mcts.optimized.numba_solver import NumbaSolverMCTS
         return NumbaSolverMCTS(**kwargs)
     elif name == "flat_numba_solver":
-        from src.algorithms.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
+        from src.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
         return FlatNumbaSolverMCTS(**kwargs)
     else:
         raise ValueError(

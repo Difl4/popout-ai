@@ -79,7 +79,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from src.algorithms.mcts.standard.base import BaseMCTS, Move
+from src.mcts.standard.base import BaseMCTS, Move
 from src.engine.standard.bitboard import PopOutBoard
 from src.engine.standard.rules import board_signature, evaluate_after_move
 

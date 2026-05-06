@@ -33,15 +33,15 @@ import time
 import pytest
 
 from src.engine.standard.bitboard import PopOutBoard
-from src.algorithms.mcts.standard.base import BaseMCTS
-from src.algorithms.mcts.standard.uct_solver import SolverMCTS
-from src.algorithms.mcts.protocol import MCTSEngine
-from src.algorithms.mcts.optimized.numba_solver import (
+from src.mcts.standard.base import BaseMCTS
+from src.mcts.standard.uct_solver import SolverMCTS
+from src.mcts.protocol import MCTSEngine
+from src.mcts.optimized.numba_solver import (
     NumbaSolverMCTS,
     FlatNumbaSolverMCTS,
     warmup_solver,
 )
-from src.algorithms.factory import get_agent
+from src.mcts.factory import get_agent
 
 
 # ── Session-scoped JIT warmup ─────────────────────────────────────────────────
@@ -110,7 +110,7 @@ class TestNumbaSolverMCTSCorrectness:
         assert move == 3
 
     def test_expand_produces_valid_solver_node_child(self):
-        from src.algorithms.mcts.standard.uct_solver import SolverNode
+        from src.mcts.standard.uct_solver import SolverNode
         engine = NumbaSolverMCTS(seed=0)
         root   = SolverNode(state=PopOutBoard())
         child  = engine.expand(root)
@@ -120,7 +120,7 @@ class TestNumbaSolverMCTSCorrectness:
         assert child.move_from_parent in PopOutBoard().legal_moves()
 
     def test_simulate_returns_valid_reward(self):
-        from src.algorithms.mcts.standard.uct_solver import SolverNode
+        from src.mcts.standard.uct_solver import SolverNode
         engine = NumbaSolverMCTS(seed=0)
         root   = SolverNode(state=PopOutBoard())
         child  = engine.expand(root)

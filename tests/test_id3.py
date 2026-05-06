@@ -1,9 +1,9 @@
-"""Testes para src/algorithms/id3/learner.py — ID3Classifier."""
+"""Testes para src/decision_tree/id3/learner.py — ID3Classifier."""
 
 import pytest
 import pandas as pd
 
-from src.ml.id3.learner import DecisionNode, ID3Classifier
+from src.decision_tree.id3.learner import DecisionNode, ID3Classifier
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────

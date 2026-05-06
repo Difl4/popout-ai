@@ -6,8 +6,8 @@ import sys
 
 import pygame
 
-from src.algorithms.factory import get_agent
-from src.algorithms.mcts.protocol import MCTSEngine
+from src.mcts.factory import get_agent
+from src.mcts.protocol import MCTSEngine
 from src.engine.standard.bitboard import COLS, ROWS, PopOutBoard
 from src.engine.standard.rules import evaluate_after_move
 from src.interfaces.gui.assets import (
@@ -59,7 +59,7 @@ def _make_ai_engine(difficulty: Difficulty) -> MCTSEngine:
     happens at difficulty-change time rather than mid-game.
     """
     if difficulty.engine_type in _NUMBA_ENGINES:
-        from src.algorithms.mcts.optimized.numba_mcts import warmup
+        from src.mcts.optimized.numba_mcts import warmup
         warmup()
     return get_agent(difficulty.engine_type, seed=42)
 

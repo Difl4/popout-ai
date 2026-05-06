@@ -30,8 +30,8 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.algorithms.mcts.optimized.numba_mcts import warmup
-from src.algorithms.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
+from src.mcts.optimized.numba_mcts import warmup
+from src.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
 from src.engine.standard.bitboard import PopOutBoard
 from src.engine.standard.rules import evaluate_after_move
 

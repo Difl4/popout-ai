@@ -5,9 +5,9 @@ import pandas as pd
 import numpy as np
 import random
 
-from src.ml.id3.learner import ID3Classifier
+from src.decision_tree.id3.learner import ID3Classifier
 from src.engine.standard.bitboard import PopOutBoard
-from src.ml.dataset_generator import make_agent, randomize_state, generate_dataset
+from src.decision_tree.dataset_generator import make_agent, randomize_state, generate_dataset
 
 
 class TestID3Validation:

@@ -1,4 +1,4 @@
-"""Unit tests for the @njit search kernels in src/algorithms/mcts/optimized/numba_search.py.
+"""Unit tests for the @njit search kernels in src/mcts/optimized/numba_search.py.
 
 A session-scoped fixture pre-compiles all JIT functions so the individual
 tests don't pay the one-time compilation cost.
@@ -10,7 +10,7 @@ import pytest
 import numpy as np
 
 from src.engine.standard.bitboard import PopOutBoard
-from src.algorithms.mcts.optimized.numba_search import (
+from src.mcts.optimized.numba_search import (
     nb_simulate,
     nb_expand_step,
 )
@@ -19,7 +19,7 @@ from src.algorithms.mcts.optimized.numba_search import (
 @pytest.fixture(scope="session", autouse=True)
 def _warm_kernels():
     """Trigger JIT compilation once for the entire test session."""
-    from src.algorithms.mcts.optimized.numba_mcts import warmup
+    from src.mcts.optimized.numba_mcts import warmup
     warmup()
 
 

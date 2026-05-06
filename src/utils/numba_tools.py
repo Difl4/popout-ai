@@ -32,7 +32,7 @@ def recompile() -> None:
     print(f"Deleted {n} cache file(s).\n")
 
     print("=== Recompiling (warmup) ===")
-    from src.algorithms.mcts import warmup
+    from src.mcts import warmup
     warmup()
     print("Done. All @njit functions recompiled and cached.")
 
