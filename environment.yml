@@ -13,5 +13,6 @@ dependencies:
   - pip
   - pygame
   - numba
+  - seaborn
   - pip:
     - -e .
