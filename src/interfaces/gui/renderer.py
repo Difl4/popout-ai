@@ -305,9 +305,12 @@ def _draw_board(
         screen.blit(overlay, (0, 0))
 
         box = pygame.Rect(50, WINDOW_HEIGHT // 2 - 100, WINDOW_WIDTH - 100, 200)
-        pygame.draw.rect(screen, COLOR_PANEL, box, border_radius=20)
+        box_surf = pygame.Surface((box.width, box.height), pygame.SRCALPHA)
+        panel_color = (*COLOR_PANEL[:3], 160)
+        pygame.draw.rect(box_surf, panel_color, box_surf.get_rect(), border_radius=20)
         box_color = _player_color(winner) if winner else COLOR_ACCENT
-        pygame.draw.rect(screen, box_color, box, width=4, border_radius=20)
+        pygame.draw.rect(box_surf, (*box_color[:3], 220), box_surf.get_rect(), width=4, border_radius=20)
+        screen.blit(box_surf, (box.x, box.y))
 
         if winner:
             end_title = bold_48.render(f"JOGADOR {winner} VENCEU!", True, _player_color(winner))
