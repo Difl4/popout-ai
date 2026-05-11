@@ -270,6 +270,7 @@ _AGENTS = {
     "5": ("flat_numba",        "FlatNumbaMCTS"),
     "6": ("numba_solver",      "NumbaSolverMCTS"),
     "7": ("flat_numba_solver", "FlatNumbaSolverMCTS"),
+    "8": ("id3",               "ID3Agent (Decision Tree)"),
 }
 
 
