@@ -3,13 +3,121 @@
 from __future__ import annotations
 
 import argparse
+import os
 import random
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import pandas as pd
 
 from src.mcts.factory import get_agent
 from src.engine.standard.bitboard import PopOutBoard
+
+
+def _worker_generate_sample(args: tuple) -> dict | None:
+    """Generate one (board-state, best-move) record.
+
+    Top-level function so multiprocessing can pickle it for spawn workers.
+    Each worker uses FlatNumbaSolverMCTS (30–60k iter/s).  Numba JIT compiles
+    on the first call per worker and is cached to disk, so subsequent runs are
+    fast.  The solver exits early once the root position is proven, so the
+    effective iteration count is often well below the requested maximum.
+
+    Args:
+        args: (seed, max_steps, iterations)
+
+    Returns:
+        Feature dict with 'best_move' label, or None if the position had no
+        legal moves or the MCTS call raised an exception.
+    """
+    seed, max_steps, iterations = args
+
+    # Guarantee project root is importable from spawn workers.
+    import sys
+    _root = str(Path(__file__).resolve().parent.parent.parent)
+    if _root not in sys.path:
+        sys.path.insert(0, _root)
+
+    import random as _random
+    from src.engine.standard.bitboard import PopOutBoard as _Board
+    from src.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
+
+    rng = _random.Random(seed)
+    board = _Board()
+
+    steps = rng.randint(0, max_steps)
+    for _ in range(steps):
+        legal = board.legal_moves()
+        if not legal:
+            break
+        board.apply_move(rng.choice(legal))
+
+    legal = board.legal_moves()
+    if not legal:
+        return None
+
+    try:
+        # max_nodes capped to iterations + a small buffer — the flat array never
+        # needs more slots than the number of iterations run.
+        agent = FlatNumbaSolverMCTS(max_nodes=iterations + 256, seed=seed)
+        best_move_int = agent.run(board, iterations=iterations)
+    except Exception:
+        return None
+
+    label = f"drop_{best_move_int}" if best_move_int < 7 else f"pop_{best_move_int - 7}"
+    features = board.to_feature_dict()
+    features["best_move"] = label
+    return features
+
+
+def generate_dataset_parallel(
+    n_samples: int = 1000,
+    iterations: int = 100_000,
+    seed: int = 42,
+    n_workers: int | None = None,
+) -> pd.DataFrame:
+    """Generate a dataset in parallel using all available CPU cores.
+
+    Each worker independently randomises a board state, then queries
+    FlatNumbaSolverMCTS (MCTS-Solver with game-theoretic proof propagation,
+    full Numba JIT loop) for the best move.  Workers run in separate processes
+    so the GIL is bypassed and all cores are used simultaneously.
+
+    Args:
+        n_samples:  Number of (state, move) pairs to generate.
+        iterations: Maximum MCTS iterations per position.  The solver exits
+                    early once the position is proven, so effective iterations
+                    are often lower.  100 000 gives near-optimal oracle quality.
+        seed:       Base random seed; worker i uses seed + i for reproducibility.
+        n_workers:  Parallel processes.  Defaults to os.cpu_count().
+
+    Returns:
+        DataFrame with one row per sample: 42 cell features, current_player,
+        and best_move label ("drop_c" or "pop_c").
+
+    Raises:
+        RuntimeError: If every worker returned None (all positions had no legal
+                      moves — should not happen in practice).
+    """
+    if n_workers is None:
+        n_workers = os.cpu_count() or 1
+
+    args_list = [(seed + i, 20, iterations) for i in range(n_samples)]
+    chunksize  = max(1, n_samples // (n_workers * 4))
+
+    import multiprocessing as mp
+    ctx = mp.get_context("spawn")   # safe in Jupyter and all OS environments
+
+    rows: list[dict] = []
+    with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx) as executor:
+        for result in executor.map(_worker_generate_sample, args_list, chunksize=chunksize):
+            if result is not None:
+                rows.append(result)
+
+    if not rows:
+        raise RuntimeError("Dataset generation failed — all workers returned None.")
+
+    return pd.DataFrame(rows)
 
 
 def make_agent(variant: str, seed: int | None = None):
