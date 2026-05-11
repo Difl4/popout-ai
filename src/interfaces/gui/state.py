@@ -63,6 +63,7 @@ class Difficulty(Enum):
     EXTREME_NUMBA      = (100_000, "Extreme Numba (100k)",    "flat_numba")
     NUMBA_SOLVER       = (10000,   "Numba Solver (10k)",      "numba_solver")
     FLAT_NUMBA_SOLVER  = (100_000, "Flat Numba Solver (100k)","flat_numba_solver")
+    ID3                = (0,       "ID3 (Decision Tree)",     "id3")
 
     @property
     def iterations(self) -> int:

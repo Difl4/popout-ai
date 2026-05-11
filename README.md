@@ -17,25 +17,28 @@ popout-ai/
 │   │   │   ├── bitboard.py    # Representacao do tabuleiro (bitboard)
 │   │   │   └── rules.py       # Regras do jogo e detecao de vitoria
 │   │   └── optimized/
-│   │       └── numba_rules.py # Kernels JIT das regras (@njit)
-│   ├── algorithms/
+│   │       ├── numba_bitboard.py  # Bitboard JIT (@njit)
+│   │       └── numba_rules.py    # Kernels JIT das regras (@njit)
+│   ├── mcts/
 │   │   ├── factory.py         # Instanciacao de agentes por nome
-│   │   └── mcts/
-│   │       ├── protocol.py    # Interface MCTSEngine
-│   │       ├── standard/
-│   │       │   ├── base.py          # MCTS base (select, expand, simulate, backprop)
-│   │       │   ├── uct_standard.py  # Agente StandardUCT
-│   │       │   └── uct_experimental.py
-│   │       └── optimized/
-│   │           ├── numba_search.py  # Kernels JIT de pesquisa MCTS (@njit)
-│   │           └── numba_mcts.py    # NumbaMCTS e FlatNumbaMCTS
-│   ├── ml/
-│   │   ├── dataset_generator.py     # Geracao de datasets via MCTS
-│   │   ├── discretizer.py           # Discretizacao de atributos numericos
+│   │   ├── protocol.py        # Interface MCTSEngine
+│   │   ├── standard/
+│   │   │   ├── base.py              # MCTS base (select, expand, simulate, backprop)
+│   │   │   ├── uct_standard.py      # Agente StandardUCT
+│   │   │   ├── uct_experimental.py  # Agente ExperimentalUCT
+│   │   │   └── uct_solver.py        # MCTS-Solver com provas AND/OR + distancia minimax
+│   │   └── optimized/
+│   │       ├── numba_mcts.py    # NumbaMCTS e FlatNumbaMCTS (JIT)
+│   │       ├── numba_solver.py  # NumbaSolverMCTS e FlatNumbaSolverMCTS (JIT)
+│   │       └── numba_search.py  # Kernels JIT de pesquisa MCTS (@njit)
+│   ├── decision_tree/
+│   │   ├── discretizer.py       # Discretizacao de atributos numericos (quantis)
+│   │   ├── dataset_generator.py # Geracao de datasets (estado -> jogada) via MCTS
+│   │   ├── id3_agent.py         # Agente ID3 jogavel (implementa MCTSEngine)
 │   │   └── id3/
-│   │       └── learner.py           # Classificador ID3
+│   │       └── learner.py       # Classificador ID3 (sem scikit-learn)
 │   ├── interfaces/
-│   │   ├── cli.py             # Interface de linha de comandos
+│   │   ├── cli.py             # Interface de linha de comandos (HvH, HvC, CvC)
 │   │   └── gui/               # Interface grafica (pygame)
 │   │       ├── core.py        # Loop principal e logica de entrada
 │   │       ├── renderer.py    # Funcoes de desenho
@@ -45,9 +48,11 @@ popout-ai/
 │   └── utils/
 │       └── numba_tools.py     # Limpeza de cache e recompilacao Numba
 ├── data/
-│   └── generated/             # Datasets gerados pelo MCTS
+│   └── generated/             # Datasets CSV gerados pelo MCTS
+├── notebooks/
+│   ├── PopOut_Solution.ipynb  # Notebook principal da entrega
+│   └── ID3_Decision_Tree.ipynb
 ├── tests/                     # Suite de testes (pytest)
-├── PopOut_Solution.ipynb       # Notebook principal da entrega
 ├── environment.yml            # Ambiente Conda
 └── setup.py                   # Configuracao do pacote
 ```
@@ -123,6 +128,6 @@ pytest -v
 
 | Cenario | Disponivel |
 |---------|-----------|
-| Humano vs Humano | GUI (modo PvP) |
-| Humano vs Computador | GUI e CLI (MCTS) |
-| Computador vs Computador | Em desenvolvimento (MCTS vs ID3) |
+| Humano vs Humano | GUI (modo PvP) e CLI |
+| Humano vs Computador | GUI e CLI (MCTS ou ID3) |
+| Computador vs Computador | CLI — torneio configuravel (MCTS vs MCTS, MCTS vs ID3, etc.) |

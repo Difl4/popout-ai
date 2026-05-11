@@ -50,9 +50,12 @@ def get_agent(name: str, **kwargs: Any):
     elif name == "flat_numba_solver":
         from src.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
         return FlatNumbaSolverMCTS(**kwargs)
+    elif name == "id3":
+        from src.decision_tree.id3_agent import ID3Agent
+        return ID3Agent(**kwargs)
     else:
         raise ValueError(
             f"Unknown agent '{name}'. "
             "Valid names: standard, experimental, solver, numba, flat_numba, "
-            "numba_solver, flat_numba_solver."
+            "numba_solver, flat_numba_solver, id3."
         )
