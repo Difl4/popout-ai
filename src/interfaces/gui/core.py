@@ -9,7 +9,7 @@ import pygame
 from src.mcts.factory import get_agent
 from src.mcts.protocol import MCTSEngine
 from src.engine.standard.bitboard import COLS, ROWS, PopOutBoard
-from src.engine.standard.rules import evaluate_after_move
+from src.engine.standard.rules import evaluate_after_move, board_signature, is_threefold_repetition
 from src.interfaces.gui.assets import (
     WINDOW_WIDTH,
     WINDOW_HEIGHT,
@@ -93,6 +93,8 @@ def launch_gui() -> None:
             state["ai_thinking"] = False
             state["ai_timer"] = 0.0
             state["anim"] = AnimationState()
+            state["history"] = [board_signature(state["board"])]
+            state["can_declare_draw"] = False
 
         def apply_and_animate(move: int, mover: int) -> None:
             old_p1, old_p2 = state["board"].mask_p1, state["board"].mask_p2
@@ -112,10 +114,26 @@ def launch_gui() -> None:
                 state["game_over"] = True
                 state["winner"] = w
                 state["message"] = f"Jogador {w} venceu!"
-            elif state["board"].is_full():
-                state["game_over"] = True
-                state["winner"] = 0
-                state["message"] = "Empate - tabuleiro cheio!"
+
+        def _update_draw_state() -> None:
+            if state["game_over"]:
+                state["can_declare_draw"] = False
+                return
+            if is_threefold_repetition(state["history"]):
+                state["can_declare_draw"] = True
+                state["message"] = "Repeticao tripla! Prima D para declarar empate"
+                return
+            if state["board"].is_full():
+                pop_moves = [m for m in state["board"].legal_moves() if m >= 7]
+                if not pop_moves:
+                    state["game_over"] = True
+                    state["winner"] = 0
+                    state["message"] = "Empate - sem jogadas possiveis!"
+                else:
+                    state["can_declare_draw"] = True
+                    state["message"] = "Tabuleiro cheio! Prima D para empate ou jogue POP"
+                return
+            state["can_declare_draw"] = False
 
         game_mode = "PvP"
         ai = _make_ai_engine(pause_menu.selected_difficulty)
@@ -165,6 +183,11 @@ def launch_gui() -> None:
                             if event.key == pygame.K_SPACE and not state["game_over"]:
                                 state["mode_pop"] = not state["mode_pop"]
                                 state["message"] = f"Modo: {'POP' if state['mode_pop'] else 'DROP'}"
+                            elif event.key == pygame.K_d and state["can_declare_draw"] and not state["game_over"]:
+                                state["game_over"] = True
+                                state["winner"] = 0
+                                state["message"] = "Empate declarado!"
+                                state["can_declare_draw"] = False
                             elif event.key == pygame.K_m:
                                 game_mode = "IA" if game_mode == "PvP" else "PvP"
                                 reset_game(f"Modo: {game_mode}")
@@ -187,10 +210,14 @@ def launch_gui() -> None:
                             state["message"] = "Jogada invalida!"
                             continue
                         mover = state["board"].current_player
+                        state["can_declare_draw"] = False
                         apply_and_animate(move, mover)
                         check_winner(mover)
                         if not state["game_over"]:
-                            state["message"] = ""
+                            state["history"].append(board_signature(state["board"]))
+                            _update_draw_state()
+                            if not state["can_declare_draw"] and not state["game_over"]:
+                                state["message"] = ""
                             state["ai_timer"] = 0.3 if game_mode == "IA" else 0
 
                 # --- Renderiza frame ANTES da IA pensar ---
@@ -213,7 +240,12 @@ def launch_gui() -> None:
                     and game_mode == "IA"
                     and state["board"].current_player == 2
                 ):
-                    if not state["ai_thinking"]:
+                    if state["can_declare_draw"]:
+                        state["game_over"] = True
+                        state["winner"] = 0
+                        state["message"] = "Empate declarado pela IA!"
+                        state["can_declare_draw"] = False
+                    elif not state["ai_thinking"]:
                         state["ai_timer"] -= dt
                         if state["ai_timer"] <= 0:
                             state["ai_thinking"] = True
@@ -229,10 +261,14 @@ def launch_gui() -> None:
                         iters = pause_menu.selected_difficulty.iterations
                         ai_move = ai.run(state["board"], iterations=iters)
                         ai_mover = state["board"].current_player
+                        state["can_declare_draw"] = False
                         apply_and_animate(ai_move, ai_mover)
                         check_winner(ai_mover)
                         if not state["game_over"]:
-                            state["message"] = "IA jogou"
+                            state["history"].append(board_signature(state["board"]))
+                            _update_draw_state()
+                            if not state["can_declare_draw"] and not state["game_over"]:
+                                state["message"] = "IA jogou"
                         state["ai_thinking"] = False
 
             except KeyboardInterrupt:

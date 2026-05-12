@@ -3,13 +3,140 @@
 from __future__ import annotations
 
 import argparse
+import os
 import random
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import pandas as pd
 
 from src.mcts.factory import get_agent
 from src.engine.standard.bitboard import PopOutBoard
+from src.engine.standard.rules import extended_features
+
+
+def _mirror_record(record: dict) -> dict:
+    """Return the horizontally mirrored version of a board-state record.
+
+    PopOut is left-right symmetric: column c mirrors to column 6-c.
+    Applying this to every recorded position doubles the dataset for free.
+    """
+    out: dict = {}
+    for key, val in record.items():
+        if key.startswith("cell_"):
+            _, row, col = key.split("_")
+            out[f"cell_{row}_{6 - int(col)}"] = val
+        elif key == "best_move":
+            move_type, col = val.split("_")
+            out["best_move"] = f"{move_type}_{6 - int(col)}"
+        else:
+            out[key] = val
+    return out
+
+
+def _worker_generate_sample(args: tuple) -> list[dict]:
+    """Play one full game and return a record for every position.
+
+    Top-level function so multiprocessing can pickle it for spawn workers.
+    Both sides are played by the same FlatNumbaSolverMCTS instance — each
+    run() call rebuilds the search tree from scratch, so there is no state
+    bleed between moves.  Starting from the empty board produces realistic
+    opening, mid-game, and end-game positions and naturally surfaces the
+    tactical situations where pop moves are optimal.
+
+    Args:
+        args: (seed, iterations)
+
+    Returns:
+        List of feature dicts, one per move played (typically 20–40).
+        Returns an empty list on failure.
+    """
+    seed, iterations = args
+
+    import sys
+    _root = str(Path(__file__).resolve().parent.parent.parent)
+    if _root not in sys.path:
+        sys.path.insert(0, _root)
+
+    from src.engine.standard.bitboard import PopOutBoard as _Board
+    from src.engine.standard.rules import evaluate_after_move, extended_features as _ext_feat
+    from src.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
+
+    agent   = FlatNumbaSolverMCTS(max_nodes=iterations + 256, seed=seed)
+    board   = _Board()
+    records: list[dict] = []
+
+    try:
+        for _ in range(300):  # safety cap — real games end well before this
+            legal = board.legal_moves()
+            if not legal:
+                break
+
+            mover         = board.current_player
+            best_move_int = agent.run(board, iterations=iterations)
+
+            label    = f"drop_{best_move_int}" if best_move_int < 7 else f"pop_{best_move_int - 7}"
+            features = _ext_feat(board)
+            features["best_move"] = label
+            records.append(features)
+
+            board.apply_move(best_move_int)
+            if evaluate_after_move(board, mover=mover) != 0:
+                break
+    except Exception:
+        pass
+
+    return records + [_mirror_record(r) for r in records]
+
+
+def generate_dataset_parallel(
+    n_games: int = 200,
+    iterations: int = 100_000,
+    seed: int = 42,
+    n_workers: int | None = None,
+) -> pd.DataFrame:
+    """Generate a dataset by playing full games with FlatNumbaSolverMCTS.
+
+    Each worker plays one complete game (both sides), recording every
+    (board-state, best-move) pair from the opening through to the terminal
+    position.  This produces realistic positions and naturally includes
+    tactical pop moves that random scrambling misses.
+
+    Total rows ≈ n_games × average game length (~25–35 moves).
+
+    Args:
+        n_games:    Number of full games to play.
+        iterations: Maximum MCTS iterations per move.  The solver exits early
+                    once the position is proven.  100 000 gives near-optimal
+                    oracle quality.
+        seed:       Base random seed; game i uses seed + i for reproducibility.
+        n_workers:  Parallel processes.  Defaults to os.cpu_count().
+
+    Returns:
+        DataFrame with one row per position: 42 cell features, current_player,
+        and best_move label ("drop_c" or "pop_c").
+
+    Raises:
+        RuntimeError: If no records were generated.
+    """
+    if n_workers is None:
+        n_workers = os.cpu_count() or 1
+
+    args_list = [(seed + i, iterations) for i in range(n_games)]
+    chunksize  = max(1, n_games // (n_workers * 4))
+
+    import multiprocessing as mp
+    ctx = mp.get_context("spawn")
+
+    rows: list[dict] = []
+    with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx) as executor:
+        for game_records in executor.map(_worker_generate_sample, args_list, chunksize=chunksize):
+            rows.extend(game_records)
+
+    if not rows:
+        raise RuntimeError("Dataset generation failed — all games produced no records.")
+
+    return pd.DataFrame(rows)
 
 
 def make_agent(variant: str, seed: int | None = None):
@@ -143,7 +270,7 @@ def generate_dataset(
         else:
             best_move = ("pop", best_move_int - 7)
 
-        features = board.to_feature_dict()
+        features = extended_features(board)
         features["best_move"] = f"{best_move[0]}_{best_move[1]}"
         rows.append(features)
 

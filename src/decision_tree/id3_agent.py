@@ -10,14 +10,15 @@ Qualidade: inferior ao MCTS, mas suficiente para jogar de forma coerente.
 
 from __future__ import annotations
 
+import random
 from pathlib import Path
 from typing import Optional
 
 import pandas as pd
 
 from src.engine.standard.bitboard import PopOutBoard
+from src.engine.standard.rules import extended_features
 from src.decision_tree.id3.learner import ID3Classifier
-from src.decision_tree.discretizer import fit_quantile_bins, apply_bins
 
 
 class ID3Agent:
@@ -95,9 +96,10 @@ class ID3Agent:
         """
         self._ensure_trained()
 
-        assert self._classifier is not None
+        if self._classifier is None:
+            raise RuntimeError("Classifier não inicializado após _ensure_trained()")
 
-        features = board.to_feature_dict()
+        features = extended_features(board)
         row = pd.Series({k: str(v) for k, v in features.items()})
         prediction = self._classifier.predict_one(row)
 
@@ -110,8 +112,12 @@ class ID3Agent:
     def _parse_move(prediction: str, legal_moves: list[int]) -> int:
         """Converte predição "drop_3" / "pop_1" para inteiro do motor.
 
-        Usa o primeiro movimento legal como fallback se a predição for inválida
-        ou ilegal (pode acontecer em estados não vistos durante o treino).
+        Se a predição for inválida ou ilegal (estados não vistos durante o treino),
+        escolhe aleatoriamente entre os movimentos legais disponíveis.
+
+        ALTERAÇÃO: o fallback anterior devolvia sempre legal_moves[0] (drop coluna 0),
+        o que era determinístico e facilmente explorado pelo adversário. O fallback
+        aleatório é menos previsível e mais justo como comportamento de recuperação.
         """
         try:
             move_type, col_str = prediction.split("_")
@@ -121,4 +127,6 @@ class ID3Agent:
                 return move
         except (ValueError, AttributeError):
             pass
-        return legal_moves[0]
+
+        # ALTERAÇÃO: random.choice em vez de legal_moves[0]
+        return random.choice(legal_moves)
