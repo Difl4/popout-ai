@@ -53,9 +53,12 @@ def get_agent(name: str, **kwargs: Any):
     elif name == "id3":
         from src.decision_tree.id3_agent import ID3Agent
         return ID3Agent(**kwargs)
+    elif name == "id3_raw":
+        from src.decision_tree.id3_agent_raw import ID3AgentRaw
+        return ID3AgentRaw(**kwargs)
     else:
         raise ValueError(
             f"Unknown agent '{name}'. "
             "Valid names: standard, experimental, solver, numba, flat_numba, "
-            "numba_solver, flat_numba_solver, id3."
+            "numba_solver, flat_numba_solver, id3, id3_raw."
         )
