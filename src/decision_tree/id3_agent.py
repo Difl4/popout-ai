@@ -17,6 +17,7 @@ from typing import Optional
 import pandas as pd
 
 from src.engine.standard.bitboard import PopOutBoard
+from src.engine.standard.rules import extended_features
 from src.decision_tree.id3.learner import ID3Classifier
 
 
@@ -98,7 +99,7 @@ class ID3Agent:
         if self._classifier is None:
             raise RuntimeError("Classifier não inicializado após _ensure_trained()")
 
-        features = board.to_feature_dict()
+        features = extended_features(board)
         row = pd.Series({k: str(v) for k, v in features.items()})
         prediction = self._classifier.predict_one(row)
 

@@ -12,6 +12,7 @@ import pandas as pd
 
 from src.mcts.factory import get_agent
 from src.engine.standard.bitboard import PopOutBoard
+from src.engine.standard.rules import extended_features
 
 
 def _mirror_record(record: dict) -> dict:
@@ -58,7 +59,7 @@ def _worker_generate_sample(args: tuple) -> list[dict]:
         sys.path.insert(0, _root)
 
     from src.engine.standard.bitboard import PopOutBoard as _Board
-    from src.engine.standard.rules import evaluate_after_move
+    from src.engine.standard.rules import evaluate_after_move, extended_features as _ext_feat
     from src.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
 
     agent   = FlatNumbaSolverMCTS(max_nodes=iterations + 256, seed=seed)
@@ -75,7 +76,7 @@ def _worker_generate_sample(args: tuple) -> list[dict]:
             best_move_int = agent.run(board, iterations=iterations)
 
             label    = f"drop_{best_move_int}" if best_move_int < 7 else f"pop_{best_move_int - 7}"
-            features = board.to_feature_dict()
+            features = _ext_feat(board)
             features["best_move"] = label
             records.append(features)
 
@@ -269,7 +270,7 @@ def generate_dataset(
         else:
             best_move = ("pop", best_move_int - 7)
 
-        features = board.to_feature_dict()
+        features = extended_features(board)
         features["best_move"] = f"{best_move[0]}_{best_move[1]}"
         rows.append(features)
 
