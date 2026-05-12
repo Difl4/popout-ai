@@ -149,25 +149,9 @@ class ID3Classifier:
             node.label = node.majority_label
             return node
 
-        gains = {}
-        best_gain = -1.0
-        best_feature = None
-
-        # OTIMIZAÇÃO: Early stopping se encontrar feature com ganho muito bom
-        for f in features:
-            gain = self.information_gain(df, f, target)
-            gains[f] = gain
-
-            if gain > best_gain:
-                best_gain = gain
-                best_feature = f
-
-            # Early stopping: se ganho é próximo do máximo teórico, para
-            if best_gain > 0.95:
-                break
-
-        if best_feature is None:
-            best_feature = features[0]
+        gains = {f: self.information_gain(df, f, target) for f in features}
+        best_feature = max(gains, key=gains.get)
+        best_gain = gains[best_feature]
 
         node.feature = best_feature
         remaining = [f for f in features if f != best_feature]

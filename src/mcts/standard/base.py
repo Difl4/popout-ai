@@ -91,12 +91,11 @@ class BaseMCTS:
         choice = self.random.choice
 
         for _ in range(self.rollout_depth):
-            if state.is_full():
-                return 0.5
-
-            # OTIMIZAÇÃO: Verificar threefold directamente (O(1) lookup)
+            # Rule 2: full board is NOT an automatic draw — player can still pop.
+            # legal_moves() returns only pop moves when the board is full; the
+            # `if not legal` check below handles the truly stuck case.
             if any(count >= 3 for count in sig_counter.values()):
-                return 0.5
+                return 0.5   # Rule 3: AI always declares draw on threefold
 
             legal = state.legal_moves()
             if not legal:

@@ -14,6 +14,10 @@ from src.mcts.factory import get_agent
 from src.engine.standard.bitboard import PopOutBoard
 from src.engine.standard.rules import extended_features
 
+# Iteration levels the opponent can drop to when blundering.
+# Sampled uniformly so every severity of mistake is equally represented.
+BLUNDER_GRID = [100, 300, 500, 1_000, 3_000, 5_000, 10_000, 30_000]
+
 
 def _mirror_record(record: dict) -> dict:
     """Return the horizontally mirrored version of a board-state record.
@@ -38,20 +42,27 @@ def _worker_generate_sample(args: tuple) -> list[dict]:
     """Play one full game and return a record for every position.
 
     Top-level function so multiprocessing can pickle it for spawn workers.
-    Both sides are played by the same FlatNumbaSolverMCTS instance — each
-    run() call rebuilds the search tree from scratch, so there is no state
-    bleed between moves.  Starting from the empty board produces realistic
-    opening, mid-game, and end-game positions and naturally surfaces the
-    tactical situations where pop moves are optimal.
+
+    Design:
+    - The oracle (FlatNumbaSolverMCTS at oracle_iterations) plays one fixed
+      side for the entire game and labels EVERY position — regardless of whose
+      turn it is — with its best move.  This ensures all training labels are
+      oracle-quality.
+    - Which side the oracle plays alternates per game (even seed → player 1,
+      odd seed → player 2) so the dataset covers both player perspectives.
+    - On the opponent's turns the game advances using oracle_iterations most
+      of the time, but with probability blunder_rate the iteration count drops
+      to a uniformly sampled value from blunder_grid.  This simulates human
+      inconsistency: mostly strong play, occasionally a shallow-search mistake.
 
     Args:
-        args: (seed, iterations)
+        args: (seed, oracle_iterations, blunder_rate, blunder_grid)
 
     Returns:
-        List of feature dicts, one per move played (typically 20–40).
+        List of feature dicts, one per position (typically 40–80 after mirroring).
         Returns an empty list on failure.
     """
-    seed, iterations = args
+    seed, oracle_iterations, blunder_rate, blunder_grid = args
 
     import sys
     _root = str(Path(__file__).resolve().parent.parent.parent)
@@ -62,8 +73,10 @@ def _worker_generate_sample(args: tuple) -> list[dict]:
     from src.engine.standard.rules import evaluate_after_move, extended_features as _ext_feat
     from src.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
 
-    agent   = FlatNumbaSolverMCTS(max_nodes=iterations + 256, seed=seed)
-    board   = _Board()
+    rng           = random.Random(seed)
+    agent         = FlatNumbaSolverMCTS(max_nodes=oracle_iterations + 256, seed=seed)
+    oracle_player = 1 if seed % 2 == 0 else 2   # alternate which side oracle plays
+    board         = _Board()
     records: list[dict] = []
 
     try:
@@ -72,15 +85,36 @@ def _worker_generate_sample(args: tuple) -> list[dict]:
             if not legal:
                 break
 
-            mover         = board.current_player
-            best_move_int = agent.run(board, iterations=iterations)
+            mover = board.current_player
 
-            label    = f"drop_{best_move_int}" if best_move_int < 7 else f"pop_{best_move_int - 7}"
-            features = _ext_feat(board)
+            # Always label with the oracle's best move from this position.
+            oracle_move = agent.run(board, iterations=oracle_iterations)
+            # _status[0] is the root node's proof status after run():
+            #   0 = UNKNOWN (heuristic best-guess move)
+            #   1 = WIN  (forced win — fastest path, provably optimal)
+            #   2 = LOSS (forced loss — slowest path, provably optimal)
+            #   3 = DRAW (proven draw)
+            # All three non-UNKNOWN statuses produce a mathematically determined
+            # label, so all are worth oversampling during training.
+            is_proven   = int(agent._status[0] != 0)
+            label       = f"drop_{oracle_move}" if oracle_move < 7 else f"pop_{oracle_move - 7}"
+            features    = _ext_feat(board)
             features["best_move"] = label
+            features["is_proven"] = is_proven
             records.append(features)
 
-            board.apply_move(best_move_int)
+            # Decide which move actually advances the game.
+            if mover == oracle_player:
+                move = oracle_move
+            else:
+                # Opponent: play at oracle strength, or blunder to a weaker level.
+                if rng.random() < blunder_rate:
+                    opp_iters = rng.choice(blunder_grid)
+                    move      = agent.run(board, iterations=opp_iters)
+                else:
+                    move = oracle_move   # reuse the oracle result — no extra call needed
+
+            board.apply_move(move)
             if evaluate_after_move(board, mover=mover) != 0:
                 break
     except Exception:
@@ -91,26 +125,35 @@ def _worker_generate_sample(args: tuple) -> list[dict]:
 
 def generate_dataset_parallel(
     n_games: int = 200,
-    iterations: int = 100_000,
+    oracle_iterations: int = 100_000,
+    blunder_rate: float = 0.10,
+    blunder_grid: list[int] | None = None,
     seed: int = 42,
     n_workers: int | None = None,
 ) -> pd.DataFrame:
     """Generate a dataset by playing full games with FlatNumbaSolverMCTS.
 
-    Each worker plays one complete game (both sides), recording every
-    (board-state, best-move) pair from the opening through to the terminal
-    position.  This produces realistic positions and naturally includes
-    tactical pop moves that random scrambling misses.
+    The oracle plays one side at oracle_iterations strength and labels every
+    position with its best move.  The opponent plays at oracle strength most
+    of the time but occasionally drops to a weaker iteration count sampled
+    uniformly from blunder_grid, simulating human-like inconsistency.
 
-    Total rows ≈ n_games × average game length (~25–35 moves).
+    Which side the oracle plays alternates per game so both player-1 and
+    player-2 positions are represented equally in the dataset.
+
+    Total rows ≈ n_games × average_game_length × 2 (mirroring).
 
     Args:
-        n_games:    Number of full games to play.
-        iterations: Maximum MCTS iterations per move.  The solver exits early
-                    once the position is proven.  100 000 gives near-optimal
-                    oracle quality.
-        seed:       Base random seed; game i uses seed + i for reproducibility.
-        n_workers:  Parallel processes.  Defaults to os.cpu_count().
+        n_games:           Number of full games to play.
+        oracle_iterations: Iterations for the labeling oracle and the
+                           opponent's non-blunder moves.  100 000 gives
+                           near-optimal label quality.
+        blunder_rate:      Probability that the opponent blunders on any
+                           given move (default 0.10).
+        blunder_grid:      Iteration counts the opponent may drop to when
+                           blundering.  Defaults to BLUNDER_GRID.
+        seed:              Base random seed; game i uses seed + i.
+        n_workers:         Parallel processes.  Defaults to os.cpu_count().
 
     Returns:
         DataFrame with one row per position: 42 cell features, current_player,
@@ -119,11 +162,17 @@ def generate_dataset_parallel(
     Raises:
         RuntimeError: If no records were generated.
     """
+    if blunder_grid is None:
+        blunder_grid = BLUNDER_GRID
+
     if n_workers is None:
         n_workers = os.cpu_count() or 1
 
-    args_list = [(seed + i, iterations) for i in range(n_games)]
-    chunksize  = max(1, n_games // (n_workers * 4))
+    args_list = [
+        (seed + i, oracle_iterations, blunder_rate, blunder_grid)
+        for i in range(n_games)
+    ]
+    chunksize = max(1, n_games // (n_workers * 4))
 
     import multiprocessing as mp
     ctx = mp.get_context("spawn")

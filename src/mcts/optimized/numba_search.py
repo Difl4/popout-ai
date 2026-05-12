@@ -87,11 +87,11 @@ def nb_simulate(
     hist_size = np.int32(1)
 
     for _ in range(rollout_depth):
-        if nb_is_full(mask_p1, mask_p2):
-            return np.float64(0.5)
-
+        # Rule 2: full board is NOT an automatic draw — player can still pop.
+        # nb_legal_moves returns only pop moves when full; the n_moves == 0
+        # check below handles the truly stuck case.
         if nb_is_threefold_repetition(hist_p1, hist_p2, hist_size):
-            return np.float64(0.5)
+            return np.float64(0.5)   # Rule 3: AI always declares draw on threefold
 
         moves, n_moves = nb_legal_moves(mask_p1, mask_p2, current_player)
         if n_moves == 0:
@@ -263,6 +263,7 @@ def nb_mcts_run(
 def _nb_update_node_status(
     node_id: np.int32,
     terminal, status, distance, children, n_children, n_untried,
+    mp1, mp2,
 ) -> bool:
     """Recompute proof status and minimax distance for *node_id* from its children.
 
@@ -325,8 +326,14 @@ def _nb_update_node_status(
         new_status   = np.int32(_S_DRAW)
         new_distance = np.int32(0)
     elif has_win_c:
-        new_status   = np.int32(_S_LOSS)
-        new_distance = max_win_d + np.int32(1)
+        # Under PopOut Rule 2: if the board is full the current player can
+        # declare draw rather than accept a forced loss.
+        if nb_is_full(mp1[node_id], mp2[node_id]):
+            new_status   = np.int32(_S_DRAW)
+            new_distance = np.int32(0)
+        else:
+            new_status   = np.int32(_S_LOSS)
+            new_distance = max_win_d + np.int32(1)
     else:
         return False
 
@@ -341,6 +348,7 @@ def _nb_update_node_status(
 def _nb_propagate_status(
     node_id: np.int32,
     parent, terminal, status, distance, children, n_children, n_untried,
+    mp1, mp2,
 ) -> None:
     """Walk from *node_id*'s parent to the root, updating proof status.
 
@@ -350,7 +358,8 @@ def _nb_propagate_status(
     current = parent[node_id]
     while current >= 0:
         if not _nb_update_node_status(
-            current, terminal, status, distance, children, n_children, n_untried
+            current, terminal, status, distance, children, n_children, n_untried,
+            mp1, mp2,
         ):
             break
         current = parent[current]
@@ -562,6 +571,7 @@ def nb_solver_mcts_run(
         # PROOF PROPAGATION: update status from cur upward to root.
         _nb_propagate_status(
             cur, parent, terminal, status, distance, children, n_children, n_untried,
+            mp1, mp2,
         )
 
     # BEST MOVE — proof priority, fall back to most-visited.

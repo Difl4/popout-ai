@@ -310,11 +310,11 @@ class SolverMCTS(BaseMCTS):
         can interfere with the solver's proof convergence.
 
         Rollout termination conditions (in order checked each step):
-          1. Board is full                         → draw (0.5)
-          2. Same position repeated ≥ 3 times      → draw (0.5)  [threefold]
-          3. No legal moves                        → draw (0.5)
-          4. A player wins after a move            → 1.0 or 0.0
-          5. rollout_depth steps exhausted         → draw (0.5)
+          1. Same position repeated ≥ 3 times      → draw (0.5)  [Rule 3: AI declares]
+          2. No legal moves                        → draw (0.5)
+          3. A player wins after a move            → 1.0 or 0.0
+          4. rollout_depth steps exhausted         → draw (0.5)
+          Note: full board (Rule 2) is NOT a draw — pop moves may still be available.
 
         Note on sig_counter:
           board_signature() produces a compact hash of the board state.
@@ -336,10 +336,9 @@ class SolverMCTS(BaseMCTS):
         choice = self.random.choice
 
         for _ in range(self.rollout_depth):
-            if state.is_full():
-                return 0.5
+            # Rule 2: full board is NOT an automatic draw — player can still pop.
             if any(count >= 3 for count in sig_counter.values()):
-                return 0.5
+                return 0.5   # Rule 3: AI always declares draw on threefold
 
             legal = state.legal_moves()
             if not legal:
@@ -444,15 +443,18 @@ class SolverMCTS(BaseMCTS):
 
         if draw_children:
             # At least one child leads to a draw and we can choose it.
-            # Draw is better than a proven loss, so we take it.
             new_status   = STATUS_DRAW
             new_distance = 0
         elif win_children:
-            # Every child is a WIN for the opponent → we are in a forced loss.
-            # Delay as long as possible (AND logic: opponent chooses our worst,
-            # so we maximise depth hoping for a rule-based draw like threefold).
-            new_status   = STATUS_LOSS
-            new_distance = max(c.distance for c in win_children) + 1
+            # Every child is a WIN for the opponent.
+            # Under PopOut Rule 2: if the board is currently full, the player
+            # to move can declare draw instead of accepting a forced loss.
+            if node.state.is_full():
+                new_status   = STATUS_DRAW
+                new_distance = 0
+            else:
+                new_status   = STATUS_LOSS
+                new_distance = max(c.distance for c in win_children) + 1
         else:
             return False   # edge case: no win/draw/loss children (shouldn't happen)
 
