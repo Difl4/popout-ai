@@ -15,5 +15,6 @@ dependencies:
   - numba
   - numpy
   - seaborn
+  - scikit-learn
   - pip:
     - -e .

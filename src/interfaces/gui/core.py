@@ -9,7 +9,7 @@ import pygame
 from src.mcts.factory import get_agent
 from src.mcts.protocol import MCTSEngine
 from src.engine.standard.bitboard import COLS, ROWS, PopOutBoard
-from src.engine.standard.rules import evaluate_after_move, board_signature, is_threefold_repetition
+from src.engine.standard.rules import evaluate_after_move, board_signature, is_threefold_repetition, find_winning_cells
 from src.interfaces.gui.assets import (
     WINDOW_WIDTH,
     WINDOW_HEIGHT,
@@ -95,6 +95,7 @@ def launch_gui() -> None:
             state["anim"] = AnimationState()
             state["history"] = [board_signature(state["board"])]
             state["can_declare_draw"] = False
+            state["winning_cells"] = []
 
         def apply_and_animate(move: int, mover: int) -> None:
             old_p1, old_p2 = state["board"].mask_p1, state["board"].mask_p2
@@ -114,6 +115,9 @@ def launch_gui() -> None:
                 state["game_over"] = True
                 state["winner"] = w
                 state["message"] = f"Jogador {w} venceu!"
+                score[w - 1] += 1
+                winner_mask = state["board"].mask_p1 if w == 1 else state["board"].mask_p2
+                state["winning_cells"] = find_winning_cells(winner_mask)
 
         def _update_draw_state() -> None:
             if state["game_over"]:
@@ -138,6 +142,7 @@ def launch_gui() -> None:
         game_mode = "PvP"
         ai = _make_ai_engine(pause_menu.selected_difficulty)
         hover_col: int | None = None
+        score = [0, 0]  # [p1_vitórias, p2_vitórias] — persiste entre partidas
         reset_game("Bem-vindo ao PopOut!")
 
         running = True
@@ -227,6 +232,9 @@ def launch_gui() -> None:
                     state["mode_pop"], state["message"], hover_col,
                     state["game_over"], state["winner"], game_mode,
                     state["anim"], state["ai_thinking"],
+                    winning_cells=state["winning_cells"],
+                    score=score,
+                    can_declare_draw=state["can_declare_draw"],
                 )
                 if pause_menu.is_paused:
                     _draw_pause_menu(screen, font, small_font, pause_menu, game_mode)
@@ -255,6 +263,9 @@ def launch_gui() -> None:
                                 state["mode_pop"], state["message"], hover_col,
                                 state["game_over"], state["winner"], game_mode,
                                 state["anim"], True,
+                                winning_cells=state["winning_cells"],
+                                score=score,
+                                can_declare_draw=state["can_declare_draw"],
                             )
                             pygame.display.flip()
                     if state["ai_thinking"]:

@@ -67,24 +67,68 @@ def _print_board(board: PopOutBoard) -> None:
     print(f"Turno: {player_label}")
 
 
-def _check_winner(board: PopOutBoard, mover: int, history: list) -> Optional[int]:
-    """Verifica vitória ou empate por repetição.
+def _check_winner(board: PopOutBoard, mover: int) -> Optional[int]:
+    """Verifica vitória imediata após uma jogada.
 
-    Args:
-        board (PopOutBoard): Estado atual.
-        mover (int): Jogador que acabou de jogar.
-        history (list): Histórico de assinaturas de estado.
+    NÃO verifica empates por tabuleiro cheio ou repetição — essas condições
+    são opcionais e tratadas em _handle_draw_rules (Regras 2 e 3 do PopOut).
 
     Returns:
-        Optional[int]: Vencedor (1 ou 2), -1 para empate, ou None se o jogo continua.
+        Vencedor (1 ou 2), ou None se o jogo continua.
     """
     winner = evaluate_after_move(board, mover=mover)
-    if winner:
-        return winner
-    if board.is_full():
-        return -1  # Empate (tabuleiro cheio)
+    return winner if winner else None
+
+
+def _handle_draw_rules(
+    board: PopOutBoard,
+    history: list,
+    is_human: bool,
+    player_label: str,
+) -> Optional[int]:
+    """Aplica as Regras 2 e 3 do PopOut sobre empate.
+
+    Regra 2 (tabuleiro cheio): o jogador decide fazer pop ou declarar empate.
+    Regra 3 (repetição tripla): qualquer jogador PODE (não é obrigado) declarar empate.
+
+    Para jogadores humanos, a decisão é pedida via input.
+    Para a IA, o empate é declarado automaticamente (estratégia conservadora).
+
+    Returns:
+        -1 se empate declarado ou forçado, None se o jogo deve continuar.
+    """
+    # Regra 3: repetição tripla
     if is_threefold_repetition(history):
-        return -1  # Empate (repetição tripla)
+        if is_human:
+            try:
+                ans = input(
+                    f"  Estado repetido 3 vezes! {player_label}, declaras empate? [s/n]: "
+                ).strip().lower()
+            except EOFError:
+                ans = "s"
+            if ans == "s":
+                return -1
+        else:
+            print(f"  {player_label} declara empate por repetição tripla.")
+            return -1
+
+    # Regra 2: tabuleiro cheio
+    if board.is_full():
+        pop_moves = [m for m in board.legal_moves() if m >= 7]
+        if not pop_moves:
+            print(f"  Tabuleiro cheio! {player_label} sem jogadas pop. Empate forçado.")
+            return -1
+        if is_human:
+            try:
+                ans = input(
+                    f"  Tabuleiro cheio! {player_label}: faz [p]op ou aceita [e]mpate? "
+                ).strip().lower()
+            except EOFError:
+                ans = "e"
+            if ans == "e":
+                return -1
+        # IA com tabuleiro cheio: joga normalmente (vai escolher um pop)
+
     return None
 
 
@@ -103,10 +147,17 @@ def run_hvh() -> None:
     print("Exemplos: d3 (drop coluna 3), p0 (pop coluna 0)\n")
 
     while True:
-        _print_board(board)
         history.append(board_signature(board))
+        _print_board(board)
 
         player_label = "X (Jogador 1)" if board.current_player == 1 else "O (Jogador 2)"
+
+        # Regras 2 e 3: empate opcional (tabuleiro cheio ou repetição)
+        draw = _handle_draw_rules(board, history, True, player_label)
+        if draw is not None:
+            print("Resultado: EMPATE.")
+            return
+
         try:
             raw = input(f"{player_label} — a tua jogada: ")
             move = parse_move(raw)
@@ -121,13 +172,10 @@ def run_hvh() -> None:
         mover = board.current_player
         board.apply_move(move)
 
-        result = _check_winner(board, mover, history)
+        result = _check_winner(board, mover)
         if result is not None:
             _print_board(board)
-            if result == -1:
-                print("Resultado: EMPATE.")
-            else:
-                print(f"Resultado: Jogador {result} ('{'X' if result == 1 else 'O'}') VENCEU!")
+            print(f"Resultado: Jogador {result} ('{'X' if result == 1 else 'O'}') VENCEU!")
             return
 
 
@@ -155,10 +203,20 @@ def run_hvc(iterations: int = 1000, human_player: int = 1, agent_name: str = "st
     print("Comandos: d<col> (drop), p<col> (pop). Ex.: d3, p0\n")
 
     while True:
-        _print_board(board)
         history.append(board_signature(board))
+        _print_board(board)
 
-        if board.current_player == human_player:
+        is_human = board.current_player == human_player
+        symbol = "X" if board.current_player == 1 else "O"
+        player_label = f"{symbol} (Jogador {board.current_player})"
+
+        # Regras 2 e 3: empate opcional (tabuleiro cheio ou repetição)
+        draw = _handle_draw_rules(board, history, is_human, player_label)
+        if draw is not None:
+            print("Resultado: EMPATE.")
+            return
+
+        if is_human:
             # --- Jogada humana ---
             try:
                 raw = input("A tua jogada: ")
@@ -179,15 +237,13 @@ def run_hvc(iterations: int = 1000, human_player: int = 1, agent_name: str = "st
         mover = board.current_player
         board.apply_move(move)
 
-        result = _check_winner(board, mover, history)
+        result = _check_winner(board, mover)
         if result is not None:
             _print_board(board)
-            if result == -1:
-                print("Resultado: EMPATE.")
-            elif result == human_player:
-                print(f"Resultado: GANHOU! Parabéns!")
+            if result == human_player:
+                print("Resultado: GANHOU! Parabéns!")
             else:
-                print(f"Resultado: A IA venceu. Tenta de novo!")
+                print("Resultado: A IA venceu. Tenta de novo!")
             return
 
 
@@ -237,24 +293,30 @@ def run_cvc(
             _print_board(board)
 
         agent, name, iters = agents[board.current_player]
+        symbol = "X" if board.current_player == 1 else "O"
+        player_label = f"{symbol} ({name})"
+
+        # Regras 2 e 3: IA declara empate automaticamente
+        draw = _handle_draw_rules(board, history, False, player_label)
+        if draw is not None:
+            if verbose:
+                print(f"Resultado: EMPATE após {move_num + 1} jogadas.")
+            return -1
+
         move = agent.run(board, iterations=iters)
 
         if verbose:
-            symbol = "X" if board.current_player == 1 else "O"
-            print(f"  {symbol} ({name}): {decode_move(move)}")
+            print(f"  {player_label}: {decode_move(move)}")
 
         mover = board.current_player
         board.apply_move(move)
 
-        result = _check_winner(board, mover, history)
+        result = _check_winner(board, mover)
         if result is not None:
             if verbose:
                 _print_board(board)
-                if result == -1:
-                    print(f"Resultado: EMPATE após {move_num + 1} jogadas.")
-                else:
-                    winner_name = agent1_name if result == 1 else agent2_name
-                    print(f"Resultado: {winner_name} ({'X' if result == 1 else 'O'}) VENCEU em {move_num + 1} jogadas!")
+                winner_name = agent1_name if result == 1 else agent2_name
+                print(f"Resultado: {winner_name} ({'X' if result == 1 else 'O'}) VENCEU em {move_num + 1} jogadas!")
             return result
 
     if verbose:

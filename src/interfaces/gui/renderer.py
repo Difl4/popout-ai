@@ -174,6 +174,9 @@ def _draw_board(
     game_mode: str,
     anim: AnimationState,
     ai_thinking: bool = False,
+    winning_cells: list | None = None,
+    score: list | None = None,
+    can_declare_draw: bool = False,
 ) -> None:
     """Desenha tabuleiro com animações, HUD superior/inferior, preview, hover e overlay final."""
     _draw_vertical_gradient(screen, COLOR_BG_TOP, COLOR_BG_BOTTOM)
@@ -235,6 +238,23 @@ def _draw_board(
     screen.blit(title_shadow, (17, 15))
     screen.blit(title, (14, 12))
 
+    # --- Marcador de pontuação (centro do HUD superior) ---
+    if score is not None:
+        p1_lbl = small_font.render("P1", True, COLOR_P1)
+        p2_lbl = small_font.render("P2", True, COLOR_P2)
+        score_surf = bold_24.render(f"{score[0]}  :  {score[1]}", True, COLOR_TEXT)
+        sc_total_w = p1_lbl.get_width() + 10 + score_surf.get_width() + 10 + p2_lbl.get_width() + 24
+        sc_x = 245 - sc_total_w // 2  # centro da zona livre entre título e badges
+        sc_panel = pygame.Rect(sc_x - 4, 10, sc_total_w, 58)
+        pygame.draw.rect(screen, COLOR_PANEL_LIGHT, sc_panel, border_radius=10)
+        pygame.draw.rect(screen, COLOR_PANEL_BORDER, sc_panel, width=2, border_radius=10)
+        x = sc_x + 8
+        screen.blit(p1_lbl, (x, sc_panel.y + 10))
+        x += p1_lbl.get_width() + 10
+        screen.blit(score_surf, (x, sc_panel.y + (58 - score_surf.get_height()) // 2))
+        x += score_surf.get_width() + 10
+        screen.blit(p2_lbl, (x, sc_panel.y + 10))
+
     mode_text = "POP" if mode_pop else "DROP"
     mode_color = COLOR_P2 if mode_pop else COLOR_ACCENT
     mode_bg = (60, 40, 15) if mode_pop else COLOR_PANEL_LIGHT
@@ -288,8 +308,18 @@ def _draw_board(
     screen.blit(controls_surface, (20, bottom_panel.y + 48))
 
     if message:
-        msg_color = COLOR_ERROR if "inválida" in message.lower() else COLOR_ACCENT_LIGHT
-        msg_surface = font_18.render(message, True, msg_color)
+        if can_declare_draw and not game_over:
+            msg_color = (100, 255, 140)
+            msg_surface = font_18.render(message, True, msg_color)
+            badge_rect = pygame.Rect(14, bottom_panel.y + 73, msg_surface.get_width() + 12, 30)
+            pygame.draw.rect(screen, (15, 55, 30), badge_rect, border_radius=8)
+            pygame.draw.rect(screen, (80, 200, 100), badge_rect, width=2, border_radius=8)
+        elif "inv" in message.lower():
+            msg_color = COLOR_ERROR
+            msg_surface = font_18.render(message, True, msg_color)
+        else:
+            msg_color = COLOR_ACCENT_LIGHT
+            msg_surface = font_18.render(message, True, msg_color)
         screen.blit(msg_surface, (20, bottom_panel.y + 78))
 
     for c in range(COLS):
@@ -303,6 +333,18 @@ def _draw_board(
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
         overlay.fill(COLOR_OVERLAY)
         screen.blit(overlay, (0, 0))
+
+        # --- Destaque da linha vencedora (sobre o overlay, antes da caixa) ---
+        if winner and winning_cells:
+            ring_color = _player_color(winner)
+            for cell_row, cell_col in winning_cells:
+                visual_y = board_y + (ROWS - 1 - cell_row) * CELL_SIZE
+                cx = cell_col * CELL_SIZE + CELL_SIZE // 2
+                cy = visual_y + CELL_SIZE // 2
+                # Outer glow ring
+                pygame.draw.circle(screen, (255, 255, 100), (cx, cy), radius + 5, 6)
+                # Inner ring in player colour
+                pygame.draw.circle(screen, ring_color, (cx, cy), radius + 1, 3)
 
         box = pygame.Rect(50, WINDOW_HEIGHT // 2 - 100, WINDOW_WIDTH - 100, 200)
         box_surf = pygame.Surface((box.width, box.height), pygame.SRCALPHA)
@@ -318,8 +360,15 @@ def _draw_board(
             end_title = bold_48.render("EMPATE!", True, COLOR_ACCENT)
         end_sub = small_font.render("Pressiona R para novo jogo ou ESC para sair", True, COLOR_TEXT)
 
-        screen.blit(end_title, (box.centerx - end_title.get_width() // 2, box.y + 30))
-        screen.blit(end_sub, (box.centerx - end_sub.get_width() // 2, box.y + 120))
+        # Score summary inside the end-game box
+        if score is not None:
+            sc_summary = small_font.render(
+                f"Pontuação — P1: {score[0]}  |  P2: {score[1]}", True, COLOR_TEXT_MUTED
+            )
+            screen.blit(sc_summary, (box.centerx - sc_summary.get_width() // 2, box.y + 155))
+
+        screen.blit(end_title, (box.centerx - end_title.get_width() // 2, box.y + 28))
+        screen.blit(end_sub, (box.centerx - end_sub.get_width() // 2, box.y + 110))
 
 
 def _draw_pause_menu(

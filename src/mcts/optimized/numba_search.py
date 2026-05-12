@@ -441,8 +441,11 @@ def nb_solver_mcts_run(
     """Complete MCTS-Solver loop in Numba — select, expand, simulate, backprop, proof-propagate.
 
     Extends nb_mcts_run with two additional flat arrays (status, distance) and
-    proof propagation after every backpropagation step.  Exits early once the
-    root node is proven (status[0] != UNKNOWN).
+    proof propagation after every backpropagation step.  Runs all *iterations*
+    even after the root is proven: continuing to expand the root's untried moves
+    discovers additional winning lines and refines minimax distances, so the
+    final move selection reliably returns the fastest win rather than the first
+    one proved.
 
     Arrays are pre-allocated by FlatNumbaSolverMCTS and reused across calls.
     Only the root slot (index 0) is re-initialised on each call.
@@ -473,8 +476,8 @@ def nb_solver_mcts_run(
     for _ in range(iterations):
         if n_nodes >= max_nodes - 1:
             break
-        if status[0] != _S_UNKNOWN:
-            break  # root proven — further iterations add nothing
+        if status[0] != _S_UNKNOWN and n_untried[0] == 0:
+            break   # proven & every first move tried — distance is optimal
 
         # SELECT: descend while node is fully expanded, unproven, and non-terminal.
         cur = np.int32(0)
@@ -488,7 +491,9 @@ def nb_solver_mcts_run(
             )
 
         # EXPAND: add one child for an untried move.
-        if terminal[cur] == 0 and status[cur] == _S_UNKNOWN and n_untried[cur] > 0:
+        # Allow expanding WIN nodes too — their untried moves may lead to LOSS
+        # children with shorter distances than the winning lines already proven.
+        if terminal[cur] == 0 and n_untried[cur] > 0 and status[cur] != _S_LOSS and status[cur] != _S_DRAW:
             nu   = n_untried[cur]
             idx  = np.random.randint(np.int32(0), nu)
             move = untried[cur, idx]

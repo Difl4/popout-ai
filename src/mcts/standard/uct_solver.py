@@ -512,17 +512,18 @@ class SolverMCTS(BaseMCTS):
         Each iteration is the classic four-phase loop:
           select → expand → simulate → backpropagate (+proof propagation)
 
-        Early exit: if the root node becomes proven (STATUS != UNKNOWN) before
-        all iterations are consumed, we stop immediately.  There is no point
-        running more simulations once the outcome is mathematically certain.
+        Exits only once the root is proven AND all immediate root moves have been
+        tried at least once.  This guarantees every possible first move is
+        evaluated before stopping, so get_best_move compares all winning lines
+        and reliably returns the one with the shortest minimax distance.
         """
         root = SolverNode(state=root_state.clone())
         if not root.untried_moves:
             raise ValueError("No legal moves in the given state.")
 
         for _ in range(iterations):
-            if root.status != STATUS_UNKNOWN:
-                break          # root proven — further iterations cannot help
+            if root.status != STATUS_UNKNOWN and not root.untried_moves:
+                break   # proven & every first move tried — distance is optimal
             leaf  = self.select(root)
             child = self.expand(leaf)
             reward = self.simulate(child)
