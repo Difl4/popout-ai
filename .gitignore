@@ -10,10 +10,6 @@ venv/
 # Jupyter Notebooks
 .ipynb_checkpoints
 
-# Data
-# We ignore the heavy CSVs but keep the folder structure via __init__.py
-data/generated/*.csv
-
 # IDEs
 .vscode/
 .idea/
