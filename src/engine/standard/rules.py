@@ -24,6 +24,35 @@ def has_won(bitmask: int) -> bool:
     if m & (m >> 16): return True
     return False
 
+
+def find_winning_cells(mask: int) -> list[tuple[int, int]]:
+    """Encontra as 4 células que formam a linha vencedora.
+
+    Usa os mesmos deslocamentos de has_won() para identificar a direção
+    e posição inicial da sequência de 4 peças.  Retorna coordenadas no
+    sistema do bitboard (row=0 é a linha inferior, col=0 é a coluna da
+    esquerda), compatível com o loop de renderização do renderer.
+
+    Args:
+        mask (int): Bitmask do jogador vencedor.
+
+    Returns:
+        list[tuple[int, int]]: Lista de (row, col) das 4 células vencedoras,
+                               onde row=0 é a linha inferior do tabuleiro.
+                               Lista vazia se não houver linha vencedora.
+    """
+    for shift in (1, 7, 6, 8):   # vertical, horizontal, diag\, diag/
+        m = mask & (mask >> shift)
+        m2 = m & (m >> (2 * shift))
+        if m2:
+            # lowest-set-bit trick: m2 & -m2 isolates the lowest bit
+            start = (m2 & -m2).bit_length() - 1
+            return [
+                ((start + i * shift) % 7, (start + i * shift) // 7)
+                for i in range(4)
+            ]
+    return []
+
 def check_winner_for_player(board: PopOutBoard, player: int) -> bool:
     """Verifica se o jogador especificado venceu."""
     mask = board.mask_p1 if player == 1 else board.mask_p2
