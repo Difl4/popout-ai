@@ -14,19 +14,31 @@ class PauseMenu:
         self.is_paused = False
         self.selected_option = 0
         self.selected_difficulty = Difficulty.MEDIUM
-        self.options = ["Retomar", "Novo Jogo", "Dificuldade", "Modo", "Sair"]
+        self.arena_p1_difficulty = Difficulty.HARD
+        self.arena_p2_difficulty = Difficulty.SOLVER
+        self.options = ["Retomar", "Novo Jogo", "Dificuldade", "Modo", "IA P1", "IA P2", "Sair"]
+
+    def get_options(self, game_mode: str) -> list[str]:
+        """Return only the pause-menu options that apply to the current mode."""
+        mode_options = ["Retomar", "Novo Jogo", "Modo"]
+        if game_mode == "IA":
+            mode_options.append("Dificuldade")
+        elif game_mode == "Arena":
+            mode_options.extend(["IA P1", "IA P2"])
+        mode_options.append("Sair")
+        return mode_options
 
     def toggle_pause(self) -> None:
         self.is_paused = not self.is_paused
         if self.is_paused:
             self.selected_option = 0
 
-    def navigate(self, direction: int) -> None:
+    def navigate(self, direction: int, game_mode: str = "PvP") -> None:
         if self.is_paused:
-            self.selected_option = (self.selected_option + direction) % len(self.options)
+            self.selected_option = (self.selected_option + direction) % len(self.get_options(game_mode))
 
-    def select_current(self) -> str:
-        return self.options[self.selected_option]
+    def select_current(self, game_mode: str = "PvP") -> str:
+        return self.get_options(game_mode)[self.selected_option]
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
         """Process a pygame event and return the selected option name if confirmed.

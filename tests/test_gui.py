@@ -9,10 +9,13 @@ from unittest.mock import Mock, patch, MagicMock
 pytest.importorskip("pygame")
 
 from src.interfaces.gui import (
+    _cycle_game_mode,
     _player_color,
     _player_glow,
     _column_from_mouse,
     _encode_move,
+    _is_ai_turn,
+    _next_game_mode,
     COLOR_P1,
     COLOR_P1_GLOW,
     COLOR_P2,
@@ -119,6 +122,31 @@ class TestEncodeMove:
             pop_move = _encode_move(col, mode_pop=True)
             assert drop_move == col
             assert pop_move == col + 7
+
+
+class TestGameModeHelpers:
+    """Testa helpers dos modos da GUI."""
+
+    def test_next_game_mode_cycles_all_modes(self):
+        assert _next_game_mode("PvP") == "IA"
+        assert _next_game_mode("IA") == "Arena"
+        assert _next_game_mode("Arena") == "PvP"
+
+    def test_cycle_game_mode_backward(self):
+        assert _cycle_game_mode("PvP", -1) == "Arena"
+        assert _cycle_game_mode("Arena", -1) == "IA"
+
+    def test_is_ai_turn_in_pvp(self):
+        assert _is_ai_turn("PvP", 1) is False
+        assert _is_ai_turn("PvP", 2) is False
+
+    def test_is_ai_turn_in_ia(self):
+        assert _is_ai_turn("IA", 1) is False
+        assert _is_ai_turn("IA", 2) is True
+
+    def test_is_ai_turn_in_arena(self):
+        assert _is_ai_turn("Arena", 1) is True
+        assert _is_ai_turn("Arena", 2) is True
 
 
 class TestAnimationState:
@@ -346,7 +374,18 @@ class TestPauseMenu:
         assert not menu.is_paused
         assert menu.selected_option == 0
         assert menu.selected_difficulty == Difficulty.MEDIUM
-        assert len(menu.options) == 5
+        assert menu.arena_p1_difficulty == Difficulty.HARD
+        assert menu.arena_p2_difficulty == Difficulty.SOLVER
+        assert len(menu.options) == 7
+
+    def test_pause_menu_options_match_mode(self):
+        """Menu deve mostrar apenas opções relevantes ao modo atual."""
+        from src.interfaces.gui import PauseMenu
+        menu = PauseMenu()
+
+        assert menu.get_options("PvP") == ["Retomar", "Novo Jogo", "Modo", "Sair"]
+        assert menu.get_options("IA") == ["Retomar", "Novo Jogo", "Modo", "Dificuldade", "Sair"]
+        assert menu.get_options("Arena") == ["Retomar", "Novo Jogo", "Modo", "IA P1", "IA P2", "Sair"]
     
     def test_pause_menu_toggle(self):
         """Deve alternar estado de pausa."""
@@ -364,11 +403,11 @@ class TestPauseMenu:
         from src.interfaces.gui import PauseMenu
         menu = PauseMenu()
         menu.toggle_pause()
-        
+
         assert menu.selected_option == 0
-        menu.navigate(1)
+        menu.navigate(1, "Arena")
         assert menu.selected_option == 1
-        menu.navigate(1)
+        menu.navigate(1, "Arena")
         assert menu.selected_option == 2
     
     def test_pause_menu_navigate_up(self):
@@ -378,9 +417,9 @@ class TestPauseMenu:
         menu.toggle_pause()
         menu.selected_option = 2
         
-        menu.navigate(-1)
+        menu.navigate(-1, "Arena")
         assert menu.selected_option == 1
-        menu.navigate(-1)
+        menu.navigate(-1, "Arena")
         assert menu.selected_option == 0
     
     def test_pause_menu_navigate_wrap_around(self):
@@ -388,9 +427,9 @@ class TestPauseMenu:
         from src.interfaces.gui import PauseMenu
         menu = PauseMenu()
         menu.toggle_pause()
-        menu.selected_option = 4
+        menu.selected_option = 5
 
-        menu.navigate(1)
+        menu.navigate(1, "Arena")
         assert menu.selected_option == 0  # Volta ao início
     
     def test_pause_menu_select_current(self):
@@ -399,15 +438,17 @@ class TestPauseMenu:
         menu = PauseMenu()
         menu.toggle_pause()
         
-        assert menu.select_current() == "Retomar"
+        assert menu.select_current("Arena") == "Retomar"
         menu.selected_option = 1
-        assert menu.select_current() == "Novo Jogo"
+        assert menu.select_current("Arena") == "Novo Jogo"
         menu.selected_option = 2
-        assert menu.select_current() == "Dificuldade"
+        assert menu.select_current("Arena") == "Modo"
         menu.selected_option = 3
-        assert menu.select_current() == "Modo"
+        assert menu.select_current("Arena") == "IA P1"
         menu.selected_option = 4
-        assert menu.select_current() == "Sair"
+        assert menu.select_current("Arena") == "IA P2"
+        menu.selected_option = 5
+        assert menu.select_current("Arena") == "Sair"
     
     def test_pause_menu_reset_on_toggle(self):
         """Deve resetar opção para "Retomar" ao pausar."""
@@ -447,3 +488,40 @@ class TestDrawPauseMenu:
             _draw_pause_menu(mock_screen, mock_font, mock_small_font, menu)
         except Exception as e:
             pytest.fail(f"_draw_pause_menu lançou exceção: {e}")
+
+    @patch('pygame.draw.rect')
+    @patch('pygame.draw.line')
+    def test_draw_setup_screen_renders(self, mock_line, mock_rect):
+        """Ecrã inicial de setup deve renderizar sem erros."""
+        from src.interfaces.gui import PauseMenu, _draw_setup_screen
+        from unittest.mock import MagicMock
+
+        menu = PauseMenu()
+        mock_screen = MagicMock()
+        mock_font = MagicMock()
+        mock_small_font = MagicMock()
+        mock_bold_24 = MagicMock()
+        mock_bold_48 = MagicMock()
+
+        text_surf = MagicMock()
+        text_surf.get_width.return_value = 100
+        mock_font.render.return_value = text_surf
+        mock_small_font.render.return_value = text_surf
+        mock_bold_24.render.return_value = text_surf
+        mock_bold_48.render.return_value = text_surf
+
+        try:
+            _draw_setup_screen(
+                mock_screen,
+                mock_font,
+                mock_small_font,
+                mock_bold_24,
+                mock_bold_48,
+                "Arena",
+                1,
+                menu.selected_difficulty,
+                menu.arena_p1_difficulty,
+                menu.arena_p2_difficulty,
+            )
+        except Exception as e:
+            pytest.fail(f"_draw_setup_screen lançou exceção: {e}")

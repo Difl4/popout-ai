@@ -298,12 +298,12 @@ def _draw_board(
     screen.blit(title_surf, (20, bottom_panel.y + 10))
     screen.blit(value_surf, (20 + title_surf.get_width() + 10, bottom_panel.y + 6))
 
-    if ai_thinking and game_mode == "IA" and board.current_player == 2:
-        ai_indicator = "⟳ IA a pensar..."
+    if ai_thinking and game_mode in {"IA", "Arena"}:
+        ai_indicator = "IA a pensar..."
         ai_surf = small_font.render(ai_indicator, True, COLOR_ACCENT_LIGHT)
         screen.blit(ai_surf, (WINDOW_WIDTH - 200, bottom_panel.y + 10))
 
-    controls = "SPACE: DROP/POP | M: PvP/IA | R: Novo | ESC: Pausa | CLIQUE: Jogar"
+    controls = "SPACE: DROP/POP | M: Modo | R: Novo | ESC: Pausa | CLIQUE: Jogar"
     controls_surface = small_font.render(controls, True, COLOR_TEXT_MUTED)
     screen.blit(controls_surface, (20, bottom_panel.y + 48))
 
@@ -405,9 +405,13 @@ def _draw_pause_menu(
     details = {
         "Dificuldade": pause_menu.selected_difficulty.label,
         "Modo": game_mode,
+        "IA P1": pause_menu.arena_p1_difficulty.label,
+        "IA P2": pause_menu.arena_p2_difficulty.label,
     }
 
-    for i, option in enumerate(pause_menu.options):
+    visible_options = pause_menu.get_options(game_mode)
+
+    for i, option in enumerate(visible_options):
         is_sel = i == pause_menu.selected_option
         oy = start_y + i * option_h
 
@@ -426,7 +430,7 @@ def _draw_pause_menu(
             detail_surf = small_font.render(details[option], True, detail_color)
             screen.blit(detail_surf, (mx + menu_w - 30 - detail_surf.get_width(), oy + 10))
 
-    line_y2 = start_y + len(pause_menu.options) * option_h + 5
+    line_y2 = start_y + len(visible_options) * option_h + 5
     pygame.draw.line(screen, COLOR_PANEL_BORDER, (mx + 30, line_y2), (mx + menu_w - 30, line_y2), 1)
 
     hints = [
@@ -435,3 +439,71 @@ def _draw_pause_menu(
     ]
     for j, h in enumerate(hints):
         screen.blit(h, (mx + menu_w // 2 - h.get_width() // 2, line_y2 + 12 + j * 24))
+
+
+def _draw_setup_screen(
+    screen: pygame.Surface,
+    font: pygame.font.Font,
+    small_font: pygame.font.Font,
+    bold_24: pygame.font.Font,
+    bold_48: pygame.font.Font,
+    game_mode: str,
+    selected_option: int,
+    selected_difficulty,
+    arena_p1_difficulty,
+    arena_p2_difficulty,
+) -> None:
+    """Draw the pre-game setup screen before a match starts."""
+    _draw_vertical_gradient(screen, COLOR_BG_TOP, COLOR_BG_BOTTOM)
+
+    title = bold_48.render("POPOUT AI", True, COLOR_TEXT)
+    subtitle = small_font.render("Configura a partida antes de iniciar", True, COLOR_TEXT_MUTED)
+    screen.blit(title, (WINDOW_WIDTH // 2 - title.get_width() // 2, 60))
+    screen.blit(subtitle, (WINDOW_WIDTH // 2 - subtitle.get_width() // 2, 118))
+
+    panel = pygame.Rect(80, 170, WINDOW_WIDTH - 160, 360)
+    pygame.draw.rect(screen, COLOR_PANEL, panel, border_radius=24)
+    pygame.draw.rect(screen, COLOR_PANEL_BORDER, panel, width=2, border_radius=24)
+
+    if game_mode == "PvP":
+        options = [
+            ("Modo", game_mode),
+            ("Iniciar", "Clique ou ENTER"),
+        ]
+    elif game_mode == "IA":
+        options = [
+            ("Modo", game_mode),
+            ("IA", selected_difficulty.label),
+            ("Iniciar", "Clique ou ENTER"),
+        ]
+    else:
+        options = [
+            ("Modo", game_mode),
+            ("IA P1", arena_p1_difficulty.label),
+            ("IA P2", arena_p2_difficulty.label),
+            ("Iniciar", "Clique ou ENTER"),
+        ]
+
+    row_h = 68
+    start_y = panel.y + 42
+    for idx, (label, value) in enumerate(options):
+        row = pygame.Rect(panel.x + 24, start_y + idx * row_h, panel.width - 48, row_h - 10)
+        is_selected = idx == selected_option
+        fill = COLOR_PANEL_LIGHT if is_selected else (26, 42, 82)
+        border = COLOR_ACCENT if is_selected else COLOR_PANEL_BORDER
+        pygame.draw.rect(screen, fill, row, border_radius=14)
+        pygame.draw.rect(screen, border, row, width=2, border_radius=14)
+
+        label_surf = small_font.render(label, True, COLOR_TEXT_MUTED if not is_selected else COLOR_TEXT)
+        value_surf = bold_24.render(value, True, COLOR_ACCENT_LIGHT if is_selected else COLOR_TEXT)
+        screen.blit(label_surf, (row.x + 18, row.y + 10))
+        screen.blit(value_surf, (row.right - 18 - value_surf.get_width(), row.y + 18))
+
+    hints = [
+        "Setas cima/baixo: navegar",
+        "Setas esquerda/direita ou ENTER: alterar",
+        "ENTER em Iniciar: comecar jogo",
+    ]
+    for idx, hint in enumerate(hints):
+        hint_surf = small_font.render(hint, True, COLOR_TEXT_MUTED)
+        screen.blit(hint_surf, (WINDOW_WIDTH // 2 - hint_surf.get_width() // 2, panel.bottom + 18 + idx * 24))

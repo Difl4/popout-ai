@@ -42,11 +42,20 @@ from src.interfaces.gui.renderer import (
     _draw_disc,
     _draw_glow_circle,
     _draw_pause_menu,
+    _draw_setup_screen,
     _draw_vertical_gradient,
     _player_color,
     _player_glow,
 )
-from src.interfaces.gui.core import _column_from_mouse, _encode_move, _make_ai_engine, launch_gui
+from src.interfaces.gui.core import (
+    _cycle_game_mode,
+    _column_from_mouse,
+    _encode_move,
+    _is_ai_turn,
+    _make_ai_engine,
+    _next_game_mode,
+    launch_gui,
+)
 
 __all__ = [
     "COLS",
@@ -91,11 +100,15 @@ __all__ = [
     "_draw_disc",
     "_draw_glow_circle",
     "_draw_pause_menu",
+    "_draw_setup_screen",
     "_draw_vertical_gradient",
     "_player_color",
     "_player_glow",
+    "_cycle_game_mode",
     "_column_from_mouse",
     "_encode_move",
+    "_is_ai_turn",
     "_make_ai_engine",
+    "_next_game_mode",
     "launch_gui",
 ]
