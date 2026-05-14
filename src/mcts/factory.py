@@ -84,10 +84,6 @@ def get_agent(name: str, **kwargs: Any):
         raise ValueError(
             f"Unknown agent '{name}'. "
             "Valid names: standard, experimental, solver, numba, flat_numba, "
-<<<<<<< Updated upstream
-            "numba_solver, flat_numba_solver, id3, id3_raw, id3_v1, id3_raw_v1."
-=======
             "numba_solver, flat_numba_solver, reuse, reuse_numba, "
-            "reuse_flat_numba_solver, id3, id3_raw."
->>>>>>> Stashed changes
+            "reuse_flat_numba_solver, id3, id3_raw, id3_v1, id3_raw_v1."
         )
