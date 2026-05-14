@@ -446,6 +446,7 @@ def nb_solver_mcts_run(
     mp1, mp2, player_arr, terminal,
     children, n_children, untried, n_untried,
     status, distance,
+    n_initial: np.int32,
 ) -> np.int32:
     """Complete MCTS-Solver loop in Numba — select, expand, simulate, backprop, proof-propagate.
 
@@ -457,30 +458,39 @@ def nb_solver_mcts_run(
     one proved.
 
     Arrays are pre-allocated by FlatNumbaSolverMCTS and reused across calls.
-    Only the root slot (index 0) is re-initialised on each call.
+
+    n_initial
+        Pass ``np.int32(1)`` for a fresh search: node 0 is (re-)initialised
+        from *root_m1/m2/player* before any iterations run.
+        Pass ``np.int32(k)`` where k > 1 for tree reuse: node 0 has already
+        been populated by a Python-side subtree compaction; the kernel skips
+        initialisation and starts with *k* pre-existing nodes.
     """
     max_nodes = visits.shape[0]
 
-    # Initialise root (node 0)
-    mp1[0]        = root_m1
-    mp2[0]        = root_m2
-    player_arr[0] = root_player
-    mover_arr[0]  = np.int32(3 - root_player)
-    terminal[0]   = np.int32(0)
-    visits[0]     = np.int32(0)
-    value[0]      = np.float64(0.0)
-    n_children[0] = np.int32(0)
-    parent[0]     = np.int32(-1)
-    status[0]     = np.int32(_S_UNKNOWN)
-    distance[0]   = np.int32(0)
-    legal, n_legal = nb_legal_moves(root_m1, root_m2, root_player)
-    n_untried[0]  = n_legal
-    for i in range(n_legal):
-        untried[0, i] = legal[i]
-    if n_legal == 0:
-        status[0] = np.int32(_S_DRAW)
+    if n_initial == np.int32(1):
+        # Fresh search — initialise root slot (node 0) from the board state.
+        mp1[0]        = root_m1
+        mp2[0]        = root_m2
+        player_arr[0] = root_player
+        mover_arr[0]  = np.int32(3 - root_player)
+        terminal[0]   = np.int32(0)
+        visits[0]     = np.int32(0)
+        value[0]      = np.float64(0.0)
+        n_children[0] = np.int32(0)
+        parent[0]     = np.int32(-1)
+        status[0]     = np.int32(_S_UNKNOWN)
+        distance[0]   = np.int32(0)
+        legal, n_legal = nb_legal_moves(root_m1, root_m2, root_player)
+        n_untried[0]  = n_legal
+        for i in range(n_legal):
+            untried[0, i] = legal[i]
+        if n_legal == 0:
+            status[0] = np.int32(_S_DRAW)
 
-    n_nodes = np.int32(1)
+    # n_initial == 1  → fresh tree with 1 node (the root).
+    # n_initial  > 1  → reuse: k nodes already compacted into slots 0..k-1.
+    n_nodes = n_initial
 
     for _ in range(iterations):
         if n_nodes >= max_nodes - 1:
