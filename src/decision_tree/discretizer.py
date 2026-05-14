@@ -46,6 +46,6 @@ def apply_bins(df: pd.DataFrame, bins: Dict[str, list[float]]) -> pd.DataFrame:
         n_classes = len(edges) + 1
         labels = base_labels[:n_classes]
         cut_edges = [-float("inf")] + edges + [float("inf")]
-        out[col] = pd.cut(out[col], bins=cut_edges, labels=labels, include_lowest=True).astype(str)
+        out[col] = pd.cut(out[col], bins=cut_edges, labels=labels, include_lowest=True).astype(object)
 
     return out

@@ -105,13 +105,13 @@ No jogo: `d3` = drop na coluna 3, `p0` = pop na coluna 0.
 ### Gerar dataset
 
 ```bash
-python -m src.ml.dataset_generator --variant uct_standard --samples 200 --iterations 150 --seed 42
+python -m src.decision_tree.dataset_generator --variant uct_standard --samples 200 --iterations 150 --seed 42
 ```
 
 ### Notebook
 
 ```bash
-jupyter notebook PopOut_Solution.ipynb
+jupyter notebook notebooks/PopOut_Solution.ipynb
 ```
 
 ---
