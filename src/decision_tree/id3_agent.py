@@ -44,9 +44,9 @@ class ID3Agent:
         mcts_iterations: Iterações MCTS por amostra durante a geração de fallback.
     """
 
-    DEFAULT_DATASET = str(_PROJECT_ROOT / "data/generated/popout_dt_dataset.csv")
+    DEFAULT_DATASET = str(_PROJECT_ROOT / "data/generated/v2_5000games_100k/popout_dt_dataset.csv")
     FALLBACK_DATASET = str(_PROJECT_ROOT / "data/generated/uct_standard.csv")
-    MODEL_PICKLE = str(_PROJECT_ROOT / "data/generated/id3_model.pkl")
+    MODEL_PICKLE = str(_PROJECT_ROOT / "data/generated/v2_5000games_100k/id3_model.pkl")
 
     def __init__(
         self,

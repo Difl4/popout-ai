@@ -63,8 +63,10 @@ class Difficulty(Enum):
     EXTREME_NUMBA      = (100_000, "Extreme Numba (100k)",    "flat_numba")
     NUMBA_SOLVER       = (10000,   "Numba Solver (10k)",      "numba_solver")
     FLAT_NUMBA_SOLVER  = (100_000, "Flat Numba Solver (100k)","flat_numba_solver")
-    ID3                = (0,       "ID3 (Decision Tree)",     "id3")
-    ID3_RAW            = (0,       "ID3 Raw (sem features)",  "id3_raw")
+    ID3_V1             = (0,       "ID3 v1 (3k games)",       "id3_v1")
+    ID3_RAW_V1         = (0,       "ID3 Raw v1 (3k games)",   "id3_raw_v1")
+    ID3_V2             = (0,       "ID3 v2 (5k games)",       "id3")
+    ID3_RAW_V2         = (0,       "ID3 Raw v2 (5k games)",   "id3_raw")
 
     @property
     def iterations(self) -> int:

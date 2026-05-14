@@ -6,7 +6,10 @@ callers (GUI, CLI) decoupled from concrete implementations.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def get_agent(name: str, **kwargs: Any):
@@ -56,9 +59,21 @@ def get_agent(name: str, **kwargs: Any):
     elif name == "id3_raw":
         from src.decision_tree.id3_agent_raw import ID3AgentRaw
         return ID3AgentRaw(**kwargs)
+    elif name == "id3_v1":
+        from src.decision_tree.id3_agent import ID3Agent
+        _v1 = _PROJECT_ROOT / "data/generated/v1_3000games_100k"
+        kwargs.setdefault("pickle_path", str(_v1 / "id3_model.pkl"))
+        kwargs.setdefault("dataset_path", str(_v1 / "popout_dt_dataset.csv"))
+        return ID3Agent(**kwargs)
+    elif name == "id3_raw_v1":
+        from src.decision_tree.id3_agent_raw import ID3AgentRaw
+        _v1 = _PROJECT_ROOT / "data/generated/v1_3000games_100k"
+        kwargs.setdefault("pickle_path", str(_v1 / "id3_model_raw.pkl"))
+        kwargs.setdefault("dataset_path", str(_v1 / "popout_dt_dataset.csv"))
+        return ID3AgentRaw(**kwargs)
     else:
         raise ValueError(
             f"Unknown agent '{name}'. "
             "Valid names: standard, experimental, solver, numba, flat_numba, "
-            "numba_solver, flat_numba_solver, id3, id3_raw."
+            "numba_solver, flat_numba_solver, id3, id3_raw, id3_v1, id3_raw_v1."
         )
