@@ -63,8 +63,6 @@ class Difficulty(Enum):
     EXTREME_NUMBA      = (100_000, "Extreme Numba (100k)",    "flat_numba")
     NUMBA_SOLVER       = (10000,   "Numba Solver (10k)",      "numba_solver")
     FLAT_NUMBA_SOLVER  = (100_000, "Flat Numba Solver (100k)","flat_numba_solver")
-    REUSE              = (1000,    "Reuse (1k)",              "reuse")
-    REUSE_NUMBA        = (10000,   "Reuse Numba (10k)",       "reuse_numba")
     REUSE_FLAT_SOLVER  = (100_000, "Reuse Flat Solver (100k)","reuse_flat_numba_solver")
     ID3_V1             = (0,       "ID3 v1 (3k games)",       "id3_v1")
     ID3_RAW_V1         = (0,       "ID3 Raw v1 (3k games)",   "id3_raw_v1")
