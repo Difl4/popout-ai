@@ -508,6 +508,16 @@ class SolverMCTS(BaseMCTS):
 
     # ── Main entry point ──────────────────────────────────────────────────────
 
+    def _run_iterations(self, root: SolverNode, iterations: int) -> None:
+        """Run up to *iterations* MCTS-Solver iterations from *root* in-place."""
+        for _ in range(iterations):
+            if root.status != STATUS_UNKNOWN and not root.untried_moves:
+                break
+            leaf   = self.select(root)
+            child  = self.expand(leaf)
+            reward = self.simulate(child)
+            self.backpropagate(child, reward)
+
     def run(self, root_state: PopOutBoard, iterations: int = 10_000) -> Move:
         """Run MCTS-Solver for up to *iterations* iterations and return the best move.
 
@@ -523,12 +533,91 @@ class SolverMCTS(BaseMCTS):
         if not root.untried_moves:
             raise ValueError("No legal moves in the given state.")
 
-        for _ in range(iterations):
-            if root.status != STATUS_UNKNOWN and not root.untried_moves:
-                break   # proven & every first move tried — distance is optimal
-            leaf  = self.select(root)
-            child = self.expand(leaf)
-            reward = self.simulate(child)
-            self.backpropagate(child, reward)
-
+        self._run_iterations(root, iterations)
         return self.get_best_move(root)
+
+
+# ── ReuseSolverMCTS ───────────────────────────────────────────────────────────
+
+class ReuseSolverMCTS(SolverMCTS):
+    """SolverMCTS with inter-turn tree reuse (pure Python reference implementation).
+
+    Preserves the SolverNode tree between calls to run().  After each search
+    the root is advanced to children[best_move]; on the next call it is
+    advanced to children[opponent_move] if that child was already explored,
+    inheriting its visit counts and proof status.
+
+    Usage
+    -----
+    ::
+
+        agent = ReuseSolverMCTS(seed=42)
+        agent.reset()
+
+        move = agent.run(board, 1_000)
+        board.apply_move(move)
+
+        opp = opponent.run(board, 1_000)
+        board.apply_move(opp)
+
+        move = agent.run(board, 1_000, opponent_move=opp)
+        ...
+        agent.reset()  # next game
+    """
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._root: Optional[SolverNode] = None
+
+    def reset(self) -> None:
+        """Discard the cached tree. Call at the start of every new game."""
+        self._root = None
+
+    @property
+    def cached_visits(self) -> int:
+        """Visits in the cached root node (0 when cache is empty)."""
+        return self._root.visits if self._root is not None else 0
+
+    def run(  # type: ignore[override]
+        self,
+        root_state: PopOutBoard,
+        iterations: int = 10_000,
+        *,
+        opponent_move: Optional[Move] = None,
+    ) -> Move:
+        """Return the best move, optionally reusing the tree from the previous turn.
+
+        Parameters
+        ----------
+        root_state : PopOutBoard
+            Current board state (after the opponent has played).
+        iterations : int
+            Number of new MCTS-Solver iterations to run on top of the cached tree.
+        opponent_move : Move | None, keyword-only
+            Move the opponent just played.  When given and the child was explored,
+            the cached subtree is reused.  When omitted, a fresh search is done.
+        """
+        # Advance root through the opponent's move (if we have a cached tree).
+        if self._root is not None and opponent_move is not None:
+            child = self._root.children.get(opponent_move)
+            if child is not None:
+                self._root = child
+                self._root.parent = None   # detach to let GC reclaim old tree
+            else:
+                self._root = None          # opponent played an unexplored move
+        else:
+            self._root = None              # no cache or no opponent_move → fresh
+
+        if self._root is None:
+            self._root = SolverNode(state=root_state.clone())
+
+        self._run_iterations(self._root, iterations)
+        best_move = self.get_best_move(self._root)
+
+        # Advance root to the chosen child for the next turn.
+        next_root = self._root.children.get(best_move)
+        if next_root is not None:
+            next_root.parent = None
+        self._root = next_root
+
+        return best_move

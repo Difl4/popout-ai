@@ -53,12 +53,9 @@ def get_agent(name: str, **kwargs: Any):
     elif name == "flat_numba_solver":
         from src.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
         return FlatNumbaSolverMCTS(**kwargs)
-    elif name == "reuse":
-        from src.mcts.standard.uct_reuse import ReuseUCT
-        return ReuseUCT(**kwargs)
-    elif name == "reuse_numba":
-        from src.mcts.optimized.numba_reuse import ReuseNumbaMCTS
-        return ReuseNumbaMCTS(**kwargs)
+    elif name == "reuse_solver":
+        from src.mcts.standard.uct_solver import ReuseSolverMCTS
+        return ReuseSolverMCTS(**kwargs)
     elif name == "reuse_flat_numba_solver":
         from src.mcts.optimized.numba_solver import ReuseFlatNumbaSolverMCTS
         return ReuseFlatNumbaSolverMCTS(**kwargs)
@@ -80,14 +77,22 @@ def get_agent(name: str, **kwargs: Any):
         kwargs.setdefault("pickle_path", str(_v1 / "id3_model_raw.pkl"))
         kwargs.setdefault("dataset_path", str(_v1 / "popout_dt_dataset.csv"))
         return ID3AgentRaw(**kwargs)
+    elif name == "id3_v3":
+        from src.decision_tree.id3_agent import ID3Agent
+        _v3 = _PROJECT_ROOT / "data/generated/v3_5000games_tiered"
+        kwargs.setdefault("pickle_path", str(_v3 / "id3_model.pkl"))
+        kwargs.setdefault("dataset_path", str(_v3 / "popout_dt_dataset.csv"))
+        return ID3Agent(**kwargs)
+    elif name == "id3_raw_v3":
+        from src.decision_tree.id3_agent_raw import ID3AgentRaw
+        _v3 = _PROJECT_ROOT / "data/generated/v3_5000games_tiered"
+        kwargs.setdefault("pickle_path", str(_v3 / "id3_model_raw.pkl"))
+        kwargs.setdefault("dataset_path", str(_v3 / "popout_dt_dataset.csv"))
+        return ID3AgentRaw(**kwargs)
     else:
         raise ValueError(
             f"Unknown agent '{name}'. "
             "Valid names: standard, experimental, solver, numba, flat_numba, "
-<<<<<<< Updated upstream
-            "numba_solver, flat_numba_solver, id3, id3_raw, id3_v1, id3_raw_v1."
-=======
-            "numba_solver, flat_numba_solver, reuse, reuse_numba, "
-            "reuse_flat_numba_solver, id3, id3_raw."
->>>>>>> Stashed changes
+            "numba_solver, flat_numba_solver, reuse_solver, reuse_flat_numba_solver, "
+            "id3, id3_raw, id3_v1, id3_raw_v1."
         )

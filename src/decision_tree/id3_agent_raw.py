@@ -17,6 +17,7 @@ from typing import Optional
 import pandas as pd
 
 from src.engine.standard.bitboard import PopOutBoard
+from src.engine.standard.rules import has_won
 from src.decision_tree.id3.learner import ID3Classifier
 
 _TARGET = "best_move"
@@ -112,12 +113,49 @@ class ID3AgentRaw:
         if self._classifier is None:
             raise RuntimeError("Classifier não inicializado.")
 
+        forced = self._forced_move(board)
+        if forced is not None:
+            return forced
+
         row = pd.Series({
             k: str(v)
             for k, v in board.to_feature_dict().items()
         })
         prediction = self._classifier.predict_one(row)
         return self._parse_move(prediction, board.legal_moves())
+
+    @staticmethod
+    def _forced_move(board: PopOutBoard) -> int | None:
+        me = board.current_player
+        opp = 3 - me
+        legal = board.legal_moves()
+
+        for move in legal:
+            b = board.clone()
+            b.apply_move(move)
+            mask = b.mask_p1 if me == 1 else b.mask_p2
+            if has_won(mask):
+                return move
+
+        def _opp_wins_after(b: PopOutBoard) -> bool:
+            for m in b.legal_moves():
+                c = b.clone()
+                c.apply_move(m)
+                opp_mask = c.mask_p1 if opp == 1 else c.mask_p2
+                if has_won(opp_mask):
+                    return True
+            return False
+
+        board_as_opp = board.clone()
+        board_as_opp.current_player = opp
+        if _opp_wins_after(board_as_opp):
+            for move in legal:
+                b = board.clone()
+                b.apply_move(move)
+                if not _opp_wins_after(b):
+                    return move
+
+        return None
 
     @staticmethod
     def _parse_move(prediction: str, legal_moves: list[int]) -> int:

@@ -183,22 +183,24 @@ class ID3Agent:
             if has_won(mask):
                 return move
 
-        # Priority 2: block opponent's immediate win.
-        # Find all moves that would win for the opponent on their next turn.
+        # Priority 2: block opponent's immediate win (drop or pop).
+        # After we play, board.current_player switches to opp automatically,
+        # so b.legal_moves() already returns the opponent's legal moves.
         def _opp_wins_after(b: PopOutBoard) -> bool:
             """True if the opponent can win in one move from board b."""
-            b_opp = b.clone()
-            b_opp.current_player = opp
-            for m in b_opp.legal_moves():
-                c = b_opp.clone()
+            for m in b.legal_moves():
+                c = b.clone()
                 c.apply_move(m)
                 opp_mask = c.mask_p1 if opp == 1 else c.mask_p2
                 if has_won(opp_mask):
                     return True
             return False
 
-        if _opp_wins_after(board):
-            # Find a move of mine that removes all opponent wins.
+        # Check if the opponent already has an immediate winning move from the
+        # current position (pretending it's their turn).
+        board_as_opp = board.clone()
+        board_as_opp.current_player = opp
+        if _opp_wins_after(board_as_opp):
             for move in legal:
                 b = board.clone()
                 b.apply_move(move)

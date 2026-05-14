@@ -50,25 +50,22 @@ def _worker_generate_sample(args: tuple) -> list[dict]:
       oracle-quality.
     - Which side the oracle plays alternates per game (even seed → player 1,
       odd seed → player 2) so the dataset covers both player perspectives.
-    - opponent_type controls how the opponent moves:
-        "oracle_blunder": oracle strength most of the time; with probability
-          blunder_rate drops to a random iteration count from blunder_grid.
-        "blocking_random": picks a random legal move, but (1) never plays a
-          move that accidentally wins the game for itself, and (2) always
-          blocks the oracle's immediate wins when a blocking move exists.
-    - forced_first_move (int 0-6 or None): when set, the opponent's very first
-      move is forced to drop_<forced_first_move> for systematic opening
-      coverage.  After that, normal opponent logic resumes.
+    - The opponent uses oracle_blunder: plays at oracle strength most of the
+      time, with probability blunder_rate dropping to a weaker iteration count
+      sampled from blunder_grid.
+    - forced_opening_moves (list[int]): the opponent's first N moves are forced
+      to the given column drops for systematic opening coverage.  After these
+      forced moves, normal blunder logic resumes.
 
     Args:
         args: (seed, oracle_iterations, blunder_rate, blunder_grid,
-               opponent_type, forced_first_move)
+               forced_opening_moves)
 
     Returns:
         List of feature dicts, one per position (typically 40–80 after mirroring).
         Returns an empty list on failure.
     """
-    seed, oracle_iterations, blunder_rate, blunder_grid, opponent_type, forced_first_move = args
+    seed, oracle_iterations, blunder_rate, blunder_grid, forced_opening_moves = args
 
     import sys
     _root = str(Path(__file__).resolve().parent.parent.parent)
@@ -79,78 +76,71 @@ def _worker_generate_sample(args: tuple) -> list[dict]:
     from src.engine.standard.rules import (
         evaluate_after_move,
         extended_features as _ext_feat,
-        _can_win_in_one,
     )
-    from src.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
+    from src.mcts.optimized.numba_solver import (
+        FlatNumbaSolverMCTS,
+        ReuseFlatNumbaSolverMCTS,
+    )
 
-    rng           = random.Random(seed)
-    agent         = FlatNumbaSolverMCTS(max_nodes=oracle_iterations + 256, seed=seed)
-    oracle_player = 1 if seed % 2 == 0 else 2   # alternate which side oracle plays
+    rng = random.Random(seed)
+
+    # oracle_agent: reuse enabled — consecutive oracle turns inherit the search
+    # tree, giving more effective iterations and discovering more proven positions.
+    oracle_agent = ReuseFlatNumbaSolverMCTS(max_nodes=oracle_iterations + 256, seed=seed)
+    oracle_agent.reset()
+
+    # label_agent: always fresh — opponent blunders break the tree's assumed
+    # path, so reuse would bias labels toward moves that were never played.
+    label_agent = FlatNumbaSolverMCTS(max_nodes=oracle_iterations + 256, seed=seed)
+
+    oracle_player = 1 if seed % 2 == 0 else 2
     board         = _Board()
     records: list[dict] = []
-    opponent_move_idx   = 0   # counts how many moves the opponent has made
+    opponent_move_idx         = 0
+    last_opponent_actual_move: int | None = None
 
     try:
-        for _ in range(300):  # safety cap — real games end well before this
+        for _ in range(300):
             legal = board.legal_moves()
             if not legal:
                 break
 
             mover = board.current_player
 
-            # Always label with the oracle's best move from this position.
-            oracle_move = agent.run(board, iterations=oracle_iterations)
-            # _status[0] is the root node's proof status after run():
-            #   0 = UNKNOWN (heuristic best-guess move)
-            #   1 = WIN  (forced win — fastest path, provably optimal)
-            #   2 = LOSS (forced loss — slowest path, provably optimal)
-            #   3 = DRAW (proven draw)
-            # All three non-UNKNOWN statuses produce a mathematically determined
-            # label, so all are worth oversampling during training.
-            is_proven   = int(agent._status[0] != 0)
-            label       = f"drop_{oracle_move}" if oracle_move < 7 else f"pop_{oracle_move - 7}"
-            features    = _ext_feat(board)
+            if mover == oracle_player:
+                # Oracle's turn: reuse tree from previous oracle turn for better
+                # proof discovery. Label and play come from the same search.
+                oracle_move = oracle_agent.run(
+                    board, iterations=oracle_iterations,
+                    opponent_move=last_opponent_actual_move,
+                )
+                is_proven = int(oracle_agent._status[0] != 0)
+                last_opponent_actual_move = None
+                move = oracle_move
+            else:
+                # Opponent's turn: fresh search for an unbiased label, since the
+                # opponent may have blundered to reach this position via a path
+                # the oracle never explored.
+                oracle_move = label_agent.run(board, iterations=oracle_iterations)
+                is_proven   = int(label_agent._status[0] != 0)
+
+                if opponent_move_idx < len(forced_opening_moves):
+                    forced_col = forced_opening_moves[opponent_move_idx]
+                    move = forced_col if forced_col in legal else rng.choice(legal)
+                elif rng.random() < blunder_rate:
+                    opp_iters = rng.choice(blunder_grid)
+                    move      = label_agent.run(board, iterations=opp_iters)
+                else:
+                    move = oracle_move
+
+                last_opponent_actual_move = move
+                opponent_move_idx += 1
+
+            label    = f"drop_{oracle_move}" if oracle_move < 7 else f"pop_{oracle_move - 7}"
+            features = _ext_feat(board)
             features["best_move"] = label
             features["is_proven"] = is_proven
             records.append(features)
-
-            # Decide which move actually advances the game.
-            if mover == oracle_player:
-                move = oracle_move
-            elif opponent_type == "blocking_random":
-                # First opponent move: force a specific column for opening coverage.
-                if opponent_move_idx == 0 and forced_first_move is not None:
-                    forced_drop = forced_first_move  # 0–6, always legal at game start
-                    move = forced_drop if forced_drop in legal else rng.choice(legal)
-                else:
-                    # One pass over legal moves: collect non-self-winning moves,
-                    # and the subset of those that also block oracle's immediate win.
-                    non_winning: list[int] = []
-                    blocking_non_winning: list[int] = []
-                    for m in legal:
-                        b_tmp = board.clone()
-                        b_tmp.apply_move(m)
-                        if evaluate_after_move(b_tmp, mover=mover) == mover:
-                            continue  # skip: random pop/drop accidentally wins
-                        non_winning.append(m)
-                        if not _can_win_in_one(b_tmp, oracle_player):
-                            blocking_non_winning.append(m)
-
-                    if blocking_non_winning:
-                        move = rng.choice(blocking_non_winning)
-                    elif non_winning:
-                        move = rng.choice(non_winning)
-                    else:
-                        move = rng.choice(legal)  # all moves win or lose — unavoidable
-                opponent_move_idx += 1
-            else:
-                # oracle_blunder: play at oracle strength, occasionally drop to weaker.
-                if rng.random() < blunder_rate:
-                    opp_iters = rng.choice(blunder_grid)
-                    move      = agent.run(board, iterations=opp_iters)
-                else:
-                    move = oracle_move   # reuse the oracle result — no extra call needed
-                opponent_move_idx += 1
 
             board.apply_move(move)
             if evaluate_after_move(board, mover=mover) != 0:
@@ -169,12 +159,13 @@ def generate_dataset_parallel(
     seed: int = 42,
     n_workers: int | None = None,
     oracle_blunder_fraction: float = 0.40,
+    blunder_tiers: list[tuple[float, float]] | None = None,
 ) -> pd.DataFrame:
     """Generate a dataset by playing full games with FlatNumbaSolverMCTS.
 
-    Games are split into two opponent strategies:
+    Games are split into opponent strategies:
 
-    oracle_blunder (oracle_blunder_fraction of n_games):
+    oracle_blunder (oracle_blunder_fraction of n_games, or per blunder_tiers):
         Opponent plays at oracle strength most of the time but drops to a
         weaker iteration count sampled from blunder_grid with probability
         blunder_rate.  Covers optimal-line positions.
@@ -198,13 +189,25 @@ def generate_dataset_parallel(
                                   oracle_blunder opponent's non-blunder moves.
         blunder_rate:             Probability of a blunder on any opponent move
                                   in oracle_blunder games (default 0.10).
+                                  Ignored when blunder_tiers is set.
         blunder_grid:             Iteration counts for blunders. Defaults to
                                   BLUNDER_GRID.
         seed:                     Base random seed; game i uses seed + i.
         n_workers:                Parallel processes. Defaults to os.cpu_count().
         oracle_blunder_fraction:  Fraction of games using oracle_blunder
                                   opponent (default 0.40). The rest use
-                                  blocking_random.
+                                  blocking_random. Ignored when blunder_tiers
+                                  is set.
+        blunder_tiers:            Optional list of (fraction, blunder_rate)
+                                  tuples defining multiple oracle_blunder groups
+                                  with different blunder rates. Fractions must
+                                  sum to <= 1.0; the remainder goes to
+                                  blocking_random. When set, overrides both
+                                  blunder_rate and oracle_blunder_fraction.
+                                  Example: [(0.25, 0.10), (0.25, 0.30),
+                                            (0.25, 0.60)] gives 25% near-
+                                  optimal, 25% medium, 25% weak oracle games,
+                                  and 25% blocking_random.
 
     Returns:
         DataFrame with one row per position: cell features, tactical features,
@@ -219,20 +222,43 @@ def generate_dataset_parallel(
     if n_workers is None:
         n_workers = os.cpu_count() or 1
 
-    n_oracle_blunder   = round(n_games * oracle_blunder_fraction)
-    n_blocking_random  = n_games - n_oracle_blunder
-
     args_list: list[tuple] = []
-    for i in range(n_oracle_blunder):
-        args_list.append(
-            (seed + i, oracle_iterations, blunder_rate, blunder_grid, "oracle_blunder", None)
-        )
-    for i in range(n_blocking_random):
-        forced_col = i % 7  # cycles 0–6 for systematic opening coverage
-        args_list.append(
-            (seed + n_oracle_blunder + i, oracle_iterations, blunder_rate, blunder_grid,
-             "blocking_random", forced_col)
-        )
+    game_offset = 0
+
+    # Resolve tiers: use blunder_tiers if provided, else fall back to the
+    # legacy single-rate + oracle_blunder_fraction behaviour.
+    if blunder_tiers is not None:
+        total_frac = sum(f for f, _ in blunder_tiers)
+        if total_frac > 1.0 + 1e-9:
+            raise ValueError("blunder_tiers fractions must sum to <= 1.0")
+        resolved_tiers = blunder_tiers
+    else:
+        resolved_tiers = [(oracle_blunder_fraction, blunder_rate)]
+
+    # All games use oracle_blunder with 2 forced opening moves cycling through
+    # all 7x7 = 49 column combinations for systematic opening coverage.
+    # Within each tier, game i gets forced moves (i%7, (i//7)%7).
+    for tier_frac, tier_rate in resolved_tiers:
+        n_tier = round(n_games * tier_frac)
+        for i in range(n_tier):
+            forced_opening = [i % 7, (i // 7) % 7]
+            args_list.append((
+                seed + game_offset + i,
+                oracle_iterations, tier_rate, blunder_grid,
+                forced_opening,
+            ))
+        game_offset += n_tier
+
+    # Legacy path: remaining games use blocking_random (no blunder_tiers set).
+    if blunder_tiers is None:
+        n_remaining = n_games - game_offset
+        for i in range(n_remaining):
+            forced_col = i % 7
+            args_list.append((
+                seed + game_offset + i,
+                oracle_iterations, blunder_rate, blunder_grid,
+                [forced_col],
+            ))
 
     chunksize = max(1, n_games // (n_workers * 4))
 
