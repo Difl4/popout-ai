@@ -17,3 +17,9 @@ venv/
 # OS files
 .DS_Store
 Thumbs.db
+
+# 
+.agents
+.claude/worktrees/stupefied-wing
+.codex
+.pytest_cache
