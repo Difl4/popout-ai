@@ -18,7 +18,10 @@ venv/
 .DS_Store
 Thumbs.db
 
-# 
+# Generated datasets (too large for GitHub)
+data/generated/v4_75k_100k/popout_dt_dataset.csv
+
+#
 .agents
 .claude/worktrees/stupefied-wing
 .codex

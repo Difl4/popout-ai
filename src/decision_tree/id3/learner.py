@@ -43,13 +43,27 @@ class ID3Classifier:
     def information_gain(self, df: pd.DataFrame, feature: str, target: str) -> float:
         feat = df[feature].values
         tgt  = df[target].values
-        base_h = self.entropy(tgt)
         n = len(feat)
-        weighted = 0.0
-        for v in np.unique(feat):
-            mask = feat == v
-            weighted += mask.sum() / n * self.entropy(tgt[mask])
-        return base_h - weighted
+
+        feat_codes, feat_cats = pd.factorize(feat, sort=True)
+        tgt_codes,  tgt_cats  = pd.factorize(tgt,  sort=True)
+        n_feat, n_tgt = len(feat_cats), len(tgt_cats)
+
+        tgt_counts = np.bincount(tgt_codes, minlength=n_tgt).astype(np.float64)
+        probs  = tgt_counts / n
+        base_h = float(-np.sum(probs * np.log2(np.maximum(probs, 1e-10))))
+
+        joint = np.bincount(feat_codes * n_tgt + tgt_codes,
+                            minlength=n_feat * n_tgt).reshape(n_feat, n_tgt).astype(np.float64)
+        fc = joint.sum(axis=1, keepdims=True)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            cp = np.where(fc > 0, joint / fc, 0.0)
+        log_cp = np.zeros_like(cp)
+        pos = cp > 0
+        log_cp[pos] = np.log2(cp[pos])
+        cond_h = -np.sum(joint / n * log_cp)
+
+        return base_h - cond_h
 
     @staticmethod
     def majority_class(labels) -> str:
@@ -95,6 +109,72 @@ class ID3Classifier:
 
         return node
 
+    def _build_fast(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        indices: np.ndarray,
+        feat_indices: List[int],
+        n_tgt: int,
+        depth: int,
+    ) -> DecisionNode:
+        """Recursively build the tree on pre-encoded integer arrays.
+
+        Works on a subset of rows identified by `indices` rather than copying
+        DataFrame slices, which avoids pandas overhead at every node.
+        Information gain is computed via a joint-frequency bincount — fully
+        vectorised, no Python loop over unique values.
+        """
+        node = DecisionNode()
+        tgt_here = y[indices]
+        counts = np.bincount(tgt_here, minlength=n_tgt)
+        best_cls = int(counts.argmax())
+        node.majority_label = str(self._tgt_classes_[best_cls])
+
+        if len(np.unique(tgt_here)) == 1:
+            node.label = str(self._tgt_classes_[tgt_here[0]])
+            return node
+
+        if not feat_indices or (self.max_depth is not None and depth >= self.max_depth):
+            node.label = node.majority_label
+            return node
+
+        n = len(indices)
+        base_probs = counts.astype(np.float64) / n
+        base_h = float(-np.sum(base_probs * np.log2(np.maximum(base_probs, 1e-10))))
+
+        best_ig, best_fi = -1.0, feat_indices[0]
+        for fi in feat_indices:
+            n_fv = self._feat_n_vals_[fi]
+            feat_here = X[indices, fi]
+            joint = np.bincount(feat_here * n_tgt + tgt_here,
+                                minlength=n_fv * n_tgt).reshape(n_fv, n_tgt).astype(np.float64)
+            fc = joint.sum(axis=1, keepdims=True)
+            with np.errstate(divide='ignore', invalid='ignore'):
+                cp = np.where(fc > 0, joint / fc, 0.0)
+            log_cp = np.zeros_like(cp)
+            pos = cp > 0
+            log_cp[pos] = np.log2(cp[pos])
+            cond_h = -np.sum(joint / n * log_cp)
+            ig = base_h - cond_h
+            if ig > best_ig:
+                best_ig, best_fi = ig, fi
+
+        node.feature = self._feat_cols_[best_fi]
+        remaining = [fi for fi in feat_indices if fi != best_fi]
+
+        feat_vals = X[indices, best_fi]
+        for v in range(self._feat_n_vals_[best_fi]):
+            child_indices = indices[feat_vals == v]
+            val_str = str(self._feat_maps_[best_fi][v])
+            if len(child_indices) == 0:
+                leaf = DecisionNode(label=node.majority_label, majority_label=node.majority_label)
+            else:
+                leaf = self._build_fast(X, y, child_indices, remaining, n_tgt, depth + 1)
+            node.children[val_str] = leaf
+
+        return node
+
     def fit(self, df: pd.DataFrame, target: str) -> None:
         if not isinstance(df, pd.DataFrame):
             raise TypeError(f"Expected DataFrame, got {type(df).__name__}")
@@ -109,8 +189,28 @@ class ID3Classifier:
             raise ValueError(f"DataFrame contains NaN values in columns: {nan_cols}")
 
         self.target_name = target
-        features = [c for c in df.columns if c != target]
-        self.root = self.build_tree(df, features, target, depth=0)
+        feature_cols = [c for c in df.columns if c != target]
+
+        # Encode target to integer codes once
+        tgt_cat = pd.Categorical(df[target])
+        self._tgt_classes_: list = tgt_cat.categories.tolist()
+        y = np.asarray(tgt_cat.codes, dtype=np.int32)
+
+        # Encode every feature column to integer codes once
+        n_feats = len(feature_cols)
+        X = np.empty((len(df), n_feats), dtype=np.int32)
+        self._feat_cols_: list = feature_cols
+        self._feat_maps_: list = []
+        self._feat_n_vals_: list = []
+        for j, col in enumerate(feature_cols):
+            cat = pd.Categorical(df[col])
+            X[:, j] = np.asarray(cat.codes, dtype=np.int32)
+            self._feat_maps_.append(cat.categories.tolist())
+            self._feat_n_vals_.append(len(cat.categories))
+
+        n_tgt = len(self._tgt_classes_)
+        indices = np.arange(len(df), dtype=np.int32)
+        self.root = self._build_fast(X, y, indices, list(range(n_feats)), n_tgt, depth=0)
 
     def predict_one(self, row: pd.Series) -> str:
         if self.root is None:
@@ -128,8 +228,32 @@ class ID3Classifier:
     def predict(self, df: pd.DataFrame) -> pd.Series:
         if self.root is None:
             raise ValueError("Modelo ainda não treinado.")
-        predictions = [self.predict_one(row) for _, row in df.iterrows()]
-        return pd.Series(predictions, index=df.index)
+        results = np.empty(len(df), dtype=object)
+        self._predict_batch(self.root, df, np.arange(len(df), dtype=np.int32), results)
+        return pd.Series(results, index=df.index)
+
+    def _predict_batch(
+        self,
+        node: DecisionNode,
+        df: pd.DataFrame,
+        indices: np.ndarray,
+        results: np.ndarray,
+    ) -> None:
+        """Predict for a batch of rows simultaneously, avoiding per-row Python overhead."""
+        if node.is_leaf():
+            results[indices] = node.label
+            return
+        feat_vals = df[node.feature].values
+        for val, child in node.children.items():
+            mask = feat_vals[indices] == val
+            child_indices = indices[mask]
+            if len(child_indices) > 0:
+                self._predict_batch(child, df, child_indices, results)
+        # Rows with unseen feature values fall back to the majority label
+        seen_mask = np.isin(feat_vals[indices], list(node.children.keys()))
+        unseen = indices[~seen_mask]
+        if len(unseen) > 0:
+            results[unseen] = node.majority_label
 
     def score(self, df: pd.DataFrame, target: str) -> float:
         preds = self.predict(df.drop(columns=[target]))

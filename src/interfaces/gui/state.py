@@ -70,6 +70,8 @@ class Difficulty(Enum):
     ID3_RAW_V2         = (0,       "ID3 Raw v2 (5k games)",   "id3_raw")
     ID3_V3             = (0,       "ID3 v3 (tiered)",         "id3_v3")
     ID3_RAW_V3         = (0,       "ID3 Raw v3 (tiered)",     "id3_raw_v3")
+    ID3_V4             = (0,       "ID3 v4 (75k games)",      "id3_v4")
+    ID3_RAW_V4         = (0,       "ID3 Raw v4 (75k x4)",     "id3_raw_v4")
 
     @property
     def iterations(self) -> int:
