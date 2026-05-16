@@ -428,13 +428,66 @@ class TestTreeVisualization:
         df = _weather_dataset()
         clf = ID3Classifier()
         clf.fit(df, target="play")
-        
+
         # Ambos métodos devem produzir outputs relacionados
         tree_str = clf.tree_to_string()
-        
+
         # Verificar que tem labels e estrutura
         assert "yes" in tree_str or "no" in tree_str
         assert "play" in tree_str  # Target name deve constar
         assert "→" in tree_str  # Arrows para leaf labels
+
+    def test_tree_to_string_includes_root_feature(self):
+        """O root deve indicar a feature em que é feito o primeiro split."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        tree_str = clf.tree_to_string()
+
+        # Pelo menos uma das features deve aparecer perto do topo
+        assert clf.root is not None
+        assert clf.root.feature in tree_str
+        # E deve haver um marcador explícito "split on"
+        assert "split on" in tree_str
+
+    def test_tree_to_string_includes_inner_feature_names(self):
+        """Em árvores não-triviais, features de splits interiores também aparecem."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+        tree_str = clf.tree_to_string()
+
+        # Recolhe nomes de features de todos os nós internos da árvore
+        inner_features: set = set()
+
+        def _walk(node):
+            if node is None or node.is_leaf():
+                return
+            if node.feature is not None:
+                inner_features.add(node.feature)
+            for child in node.children.values():
+                _walk(child)
+
+        _walk(clf.root)
+        # Cada feature usada num split interno deve aparecer em algum lugar no output
+        for feat in inner_features:
+            assert feat in tree_str, f"Feature '{feat}' missing from tree output"
+
+    def test_print_tree_includes_feature_names(self):
+        """O output de print_tree deve mostrar nomes de features (não só valores)."""
+        df = _weather_dataset()
+        clf = ID3Classifier()
+        clf.fit(df, target="play")
+
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        clf.print_tree()
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+
+        # O root deve indicar a feature do primeiro split
+        assert clf.root is not None and clf.root.feature is not None
+        assert clf.root.feature in output
 
 

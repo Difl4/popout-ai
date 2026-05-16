@@ -282,18 +282,28 @@ class ID3Classifier:
 
     def print_tree(self, node: Optional[DecisionNode] = None, prefix: str = "",
                    value_label: str = "") -> None:
+        """Print the tree to stdout in ASCII form.
+
+        For every non-leaf node, the feature being tested is shown in square
+        brackets next to the branch value, e.g. ``low [petal_length]``, so
+        the reader can always tell which attribute is being split on.
+        """
         if node is None:
             if self.root is None:
                 print("Modelo ainda não treinado.")
                 return
-            print(f"[{self.target_name}]")
+            if self.root.is_leaf():
+                print(f"[{self.target_name}] → {self.root.label}")
+                return
+            print(f"[{self.target_name}] — split on [{self.root.feature}]")
             self.print_tree(self.root, "", "")
             return
         if node.is_leaf():
             print(f"{prefix}{value_label} → {node.label}")
             return
         if value_label:
-            print(f"{prefix}{value_label}")
+            feat_marker = f" [{node.feature}]" if node.feature else ""
+            print(f"{prefix}{value_label}{feat_marker}")
         children = sorted(node.children.items())
         for idx, (value, child) in enumerate(children):
             is_last = idx == len(children) - 1
@@ -302,13 +312,21 @@ class ID3Classifier:
             if child.is_leaf():
                 print(f"{prefix}{connector}{value} → {child.label}")
             else:
-                print(f"{prefix}{connector}{value}")
+                feat_marker = f" [{child.feature}]" if child.feature else ""
+                print(f"{prefix}{connector}{value}{feat_marker}")
                 self.print_tree(child, child_prefix, "")
 
     def tree_to_string(self) -> str:
+        """Return the tree as a single multiline string.
+
+        Output format matches :meth:`print_tree` — non-leaf branches show the
+        feature being tested in square brackets.
+        """
         if self.root is None:
             return "Modelo ainda não treinado."
-        lines = [f"[{self.target_name}]"]
+        if self.root.is_leaf():
+            return f"[{self.target_name}] → {self.root.label}"
+        lines = [f"[{self.target_name}] — split on [{self.root.feature}]"]
         self._tree_to_string_recursive(self.root, "", "", lines)
         return "\n".join(lines)
 
@@ -325,7 +343,8 @@ class ID3Classifier:
             lines.append(f"{prefix}{value_label} → {node.label}")
             return
         if value_label:
-            lines.append(f"{prefix}{value_label}")
+            feat_marker = f" [{node.feature}]" if node.feature else ""
+            lines.append(f"{prefix}{value_label}{feat_marker}")
         children = sorted(node.children.items())
         for idx, (value, child) in enumerate(children):
             is_last = idx == len(children) - 1
@@ -334,5 +353,6 @@ class ID3Classifier:
             if child.is_leaf():
                 lines.append(f"{prefix}{connector}{value} → {child.label}")
             else:
-                lines.append(f"{prefix}{connector}{value}")
+                feat_marker = f" [{child.feature}]" if child.feature else ""
+                lines.append(f"{prefix}{connector}{value}{feat_marker}")
                 self._tree_to_string_recursive(child, child_prefix, "", lines)
