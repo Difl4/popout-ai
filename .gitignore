@@ -21,6 +21,9 @@ Thumbs.db
 # Generated datasets (too large for GitHub)
 data/generated/v4_75k_100k/popout_dt_dataset.csv
 
+# Generation checkpoint state (regenerated during runs)
+data/generated/**/*.progress
+
 #
 .agents
 .claude/worktrees/stupefied-wing
