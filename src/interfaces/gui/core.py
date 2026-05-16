@@ -82,12 +82,12 @@ def _next_game_mode(current_mode: str) -> str:
     return _cycle_game_mode(current_mode, 1)
 
 
-def _is_ai_turn(game_mode: str, current_player: int) -> bool:
+def _is_ai_turn(game_mode: str, current_player: int, human_player: int = 1) -> bool:
     """Return whether the current player is controlled by AI in the GUI mode."""
     if game_mode == "Arena":
         return True
     if game_mode == "IA":
-        return current_player == 2
+        return current_player != human_player
     return False
 
 
@@ -102,7 +102,7 @@ def _setup_options_for_mode(game_mode: str) -> list[str]:
     """Return setup menu fields for the chosen game mode."""
     options = ["Modo"]
     if game_mode == "IA":
-        options.append("IA")
+        options.extend(["IA", "Lado"])
     elif game_mode == "Arena":
         options.extend(["IA P1", "IA P2"])
     options.append("Iniciar")
@@ -240,6 +240,8 @@ def launch_gui() -> None:
                                 elif selected == "IA":
                                     pause_menu.selected_difficulty = _cycle_difficulty(pause_menu.selected_difficulty, step)
                                     ai = _make_ai_engine(pause_menu.selected_difficulty)
+                                elif selected == "Lado":
+                                    pause_menu.human_player = 2 if pause_menu.human_player == 1 else 1
                                 elif selected == "IA P1":
                                     pause_menu.arena_p1_difficulty = _cycle_difficulty(pause_menu.arena_p1_difficulty, step)
                                     arena_ai[1] = _make_ai_engine(pause_menu.arena_p1_difficulty)
@@ -248,7 +250,8 @@ def launch_gui() -> None:
                                     arena_ai[2] = _make_ai_engine(pause_menu.arena_p2_difficulty)
                                 elif selected == "Iniciar" and event.key == pygame.K_RETURN:
                                     setup_active = False
-                                    reset_game(f"Modo: {game_mode}")
+                                    _side_msg = f" — Tu: J{pause_menu.human_player}" if game_mode == "IA" else ""
+                                    reset_game(f"Modo: {game_mode}{_side_msg}")
                                     if game_mode == "Arena":
                                         state["ai_timer"] = 0.3
                             continue
@@ -272,6 +275,9 @@ def launch_gui() -> None:
                                     pause_menu.selected_difficulty = difficulties[(idx + 1) % len(difficulties)]
                                     ai = _make_ai_engine(pause_menu.selected_difficulty)
                                     state["message"] = f"Dificuldade: {pause_menu.selected_difficulty.label}"
+                                elif selected == "Lado":
+                                    pause_menu.human_player = 2 if pause_menu.human_player == 1 else 1
+                                    state["message"] = f"Tu: Jogador {pause_menu.human_player}"
                                 elif selected == "Modo":
                                     game_mode = _next_game_mode(game_mode)
                                     reset_game(f"Modo: {game_mode}")
@@ -329,6 +335,8 @@ def launch_gui() -> None:
                                 elif option == "IA":
                                     pause_menu.selected_difficulty = _cycle_difficulty(pause_menu.selected_difficulty, 1)
                                     ai = _make_ai_engine(pause_menu.selected_difficulty)
+                                elif option == "Lado":
+                                    pause_menu.human_player = 2 if pause_menu.human_player == 1 else 1
                                 elif option == "IA P1":
                                     pause_menu.arena_p1_difficulty = _cycle_difficulty(pause_menu.arena_p1_difficulty, 1)
                                     arena_ai[1] = _make_ai_engine(pause_menu.arena_p1_difficulty)
@@ -337,12 +345,13 @@ def launch_gui() -> None:
                                     arena_ai[2] = _make_ai_engine(pause_menu.arena_p2_difficulty)
                                 elif option == "Iniciar":
                                     setup_active = False
-                                    reset_game(f"Modo: {game_mode}")
+                                    _side_msg = f" — Tu: J{pause_menu.human_player}" if game_mode == "IA" else ""
+                                    reset_game(f"Modo: {game_mode}{_side_msg}")
                                     if game_mode == "Arena":
                                         state["ai_timer"] = 0.3
                                 break
                             continue
-                        if _is_ai_turn(game_mode, state["board"].current_player):
+                        if _is_ai_turn(game_mode, state["board"].current_player, pause_menu.human_player):
                             continue
                         col = _column_from_mouse(event.pos[0])
                         if col is None:
@@ -376,6 +385,7 @@ def launch_gui() -> None:
                         pause_menu.selected_difficulty,
                         pause_menu.arena_p1_difficulty,
                         pause_menu.arena_p2_difficulty,
+                        pause_menu.human_player,
                     )
                 else:
                     _draw_board(
@@ -398,7 +408,7 @@ def launch_gui() -> None:
                     and not setup_active
                     and not state["game_over"]
                     and not pause_menu.is_paused
-                    and _is_ai_turn(game_mode, state["board"].current_player)
+                    and _is_ai_turn(game_mode, state["board"].current_player, pause_menu.human_player)
                 ):
                     if state["can_declare_draw"]:
                         state["game_over"] = True

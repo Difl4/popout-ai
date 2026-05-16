@@ -383,7 +383,10 @@ def _draw_pause_menu(
     overlay.fill((0, 0, 0, 200))
     screen.blit(overlay, (0, 0))
 
-    menu_w, menu_h = 420, 420
+    option_h = 48
+    visible_options = pause_menu.get_options(game_mode)
+    menu_w = 420
+    menu_h = max(340, 75 + len(visible_options) * option_h + 80)
     mx = (WINDOW_WIDTH - menu_w) // 2
     my = (WINDOW_HEIGHT - menu_h) // 2
 
@@ -400,16 +403,14 @@ def _draw_pause_menu(
     line_y = my + 60
     pygame.draw.line(screen, COLOR_PANEL_BORDER, (mx + 30, line_y), (mx + menu_w - 30, line_y), 1)
 
-    option_h = 48
     start_y = my + 75
     details = {
         "Dificuldade": pause_menu.selected_difficulty.label,
+        "Lado": f"Jogador {pause_menu.human_player}",
         "Modo": game_mode,
         "IA P1": pause_menu.arena_p1_difficulty.label,
         "IA P2": pause_menu.arena_p2_difficulty.label,
     }
-
-    visible_options = pause_menu.get_options(game_mode)
 
     for i, option in enumerate(visible_options):
         is_sel = i == pause_menu.selected_option
@@ -452,6 +453,7 @@ def _draw_setup_screen(
     selected_difficulty,
     arena_p1_difficulty,
     arena_p2_difficulty,
+    human_player: int = 1,
 ) -> None:
     """Draw the pre-game setup screen before a match starts."""
     _draw_vertical_gradient(screen, COLOR_BG_TOP, COLOR_BG_BOTTOM)
@@ -474,6 +476,7 @@ def _draw_setup_screen(
         options = [
             ("Modo", game_mode),
             ("IA", selected_difficulty.label),
+            ("Lado", f"Jogador {human_player}"),
             ("Iniciar", "Clique ou ENTER"),
         ]
     else:

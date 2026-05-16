@@ -16,13 +16,14 @@ class PauseMenu:
         self.selected_difficulty = Difficulty.MEDIUM
         self.arena_p1_difficulty = Difficulty.HARD
         self.arena_p2_difficulty = Difficulty.SOLVER
-        self.options = ["Retomar", "Novo Jogo", "Dificuldade", "Modo", "IA P1", "IA P2", "Sair"]
+        self.human_player = 1
+        self.options = ["Retomar", "Novo Jogo", "Dificuldade", "Lado", "Modo", "IA P1", "IA P2", "Sair"]
 
     def get_options(self, game_mode: str) -> list[str]:
         """Return only the pause-menu options that apply to the current mode."""
         mode_options = ["Retomar", "Novo Jogo", "Modo"]
         if game_mode == "IA":
-            mode_options.append("Dificuldade")
+            mode_options.extend(["Dificuldade", "Lado"])
         elif game_mode == "Arena":
             mode_options.extend(["IA P1", "IA P2"])
         mode_options.append("Sair")

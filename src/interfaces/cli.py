@@ -352,6 +352,17 @@ def _ask_int(prompt: str, default: int, min_val: int = 1) -> int:
             print("  ⚠  Introduz um número inteiro.")
 
 
+def _ask_side() -> int:
+    """Pergunta ao utilizador se quer jogar como Jogador 1 ou 2."""
+    while True:
+        raw = input("  Jogar como Jogador [1/2] (default: 1): ").strip()
+        if not raw:
+            return 1
+        if raw in ("1", "2"):
+            return int(raw)
+        print("  ⚠  Introduz 1 ou 2.")
+
+
 def _ask_agent(label: str) -> tuple[str, str]:
     """Mostra lista de agentes e devolve (agent_key, display_name)."""
     print(f"\n  Escolhe o {label}:")
@@ -448,7 +459,8 @@ def run_cli_game(iterations: int = 1000) -> None:
     elif choice == "2":
         agent_key, agent_display = _ask_agent("agente IA")
         iters = _ask_int(f"  Iterações para {agent_display}", default=iterations)
-        run_hvc(iterations=iters, agent_name=agent_key)
+        side = _ask_side()
+        run_hvc(iterations=iters, human_player=side, agent_name=agent_key)
     elif choice == "3":
         run_cvc_tournament()
     else:
