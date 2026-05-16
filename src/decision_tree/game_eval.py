@@ -1,8 +1,11 @@
 """Parallel game evaluation — worker functions for ProcessPoolExecutor.
 
-Each worker process is initialised once via _init_eval_worker (section 5) or
-_init_cross_worker (section 6), which loads classifiers and warms up Numba JIT.
+Each worker process is initialised once via _init_eval_worker (section 5),
+which loads classifiers and warms up Numba JIT.
 Individual tasks are then cheap: just play games against a fresh MCTS instance.
+
+Results are returned as (w_p1, l_p1, d_p1, w_p2, l_p2, d_p2) so callers can
+report first-player and second-player win rates separately.
 """
 from __future__ import annotations
 
@@ -27,15 +30,6 @@ def _init_eval_worker(pkl_feat: str, pkl_raw: str) -> None:
         _g_clf_raw = pickle.load(f)
     warmup()
     _g_Flat_MCTS   = FlatNumbaMCTS
-    _g_Solver_MCTS = FlatNumbaSolverMCTS
-
-
-def _init_cross_worker() -> None:
-    """Warm up Numba only — models are loaded per-task in section 6."""
-    global _g_Solver_MCTS
-    from src.mcts.optimized.numba_mcts import warmup
-    from src.mcts.optimized.numba_solver import FlatNumbaSolverMCTS
-    warmup()
     _g_Solver_MCTS = FlatNumbaSolverMCTS
 
 
@@ -67,12 +61,14 @@ def _make_agent(is_raw: bool, is_pure: bool, clf):
 
 
 def _play_games(agent, mcts_cls, iters: int, n_games: int, seed: int):
+    """Play n_games alternating sides; return (w_p1, l_p1, d_p1, w_p2, l_p2, d_p2)."""
     import random
     from src.engine.standard.bitboard import PopOutBoard
     from src.engine.standard.rules import evaluate_after_move
     random.seed(seed)
     mcts = mcts_cls(max_nodes=iters + 256)
-    wins = losses = draws = 0
+    w_p1 = l_p1 = d_p1 = 0
+    w_p2 = l_p2 = d_p2 = 0
     for i in range(n_games):
         tree_p = 1 if i % 2 == 0 else 2
         board = PopOutBoard()
@@ -88,16 +84,18 @@ def _play_games(agent, mcts_cls, iters: int, n_games: int, seed: int):
             if winner:
                 result = 1 if winner == tree_p else -1
                 break
-        if result == 1:
-            wins += 1
-        elif result == -1:
-            losses += 1
+        if tree_p == 1:
+            if result == 1:    w_p1 += 1
+            elif result == -1: l_p1 += 1
+            else:              d_p1 += 1
         else:
-            draws += 1
-    return wins, losses, draws
+            if result == 1:    w_p2 += 1
+            elif result == -1: l_p2 += 1
+            else:              d_p2 += 1
+    return w_p1, l_p1, d_p1, w_p2, l_p2, d_p2
 
 
-# ── Task functions ────────────────────────────────────────────────────────────
+# ── Task function ─────────────────────────────────────────────────────────────
 
 def eval_config(is_raw: bool, is_pure: bool,
                 engine_name: str, iters: int, n_games: int, seed: int):
@@ -106,13 +104,3 @@ def eval_config(is_raw: bool, is_pure: bool,
     agent = _make_agent(is_raw, is_pure, clf)
     mcts_cls = _g_Flat_MCTS if engine_name == 'FlatNumbaMCTS' else _g_Solver_MCTS
     return _play_games(agent, mcts_cls, iters, n_games, seed)
-
-
-def eval_cross_config(pkl_path: str, is_raw: bool,
-                      iters: int, n_games: int, seed: int):
-    """Section 6 task: load model from pkl_path, play games vs FlatNumbaSolverMCTS."""
-    import pickle
-    with open(pkl_path, 'rb') as f:
-        clf = pickle.load(f)
-    agent = _make_agent(is_raw, False, clf)
-    return _play_games(agent, _g_Solver_MCTS, iters, n_games, seed)
