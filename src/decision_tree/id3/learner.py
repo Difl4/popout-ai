@@ -131,8 +131,8 @@ class ID3Classifier:
         best_cls = int(counts.argmax())
         node.majority_label = str(self._tgt_classes_[best_cls])
 
-        if len(np.unique(tgt_here)) == 1:
-            node.label = str(self._tgt_classes_[tgt_here[0]])
+        if counts.max() == len(indices):
+            node.label = str(self._tgt_classes_[best_cls])
             return node
 
         if not feat_indices or (self.max_depth is not None and depth >= self.max_depth):
@@ -184,10 +184,6 @@ class ID3Classifier:
             raise ValueError("DataFrame is empty")
         if target not in df.columns:
             raise ValueError(f"Target column '{target}' not found in DataFrame. Available columns: {list(df.columns)}")
-        if df.isnull().any().any():
-            nan_cols = df.columns[df.isnull().any()].tolist()
-            raise ValueError(f"DataFrame contains NaN values in columns: {nan_cols}")
-
         self.target_name = target
         feature_cols = [c for c in df.columns if c != target]
 
@@ -256,7 +252,8 @@ class ID3Classifier:
             results[unseen] = node.majority_label
 
     def score(self, df: pd.DataFrame, target: str) -> float:
-        preds = self.predict(df.drop(columns=[target]))
+        feat_cols = [c for c in df.columns if c != target]
+        preds = self.predict(df[feat_cols])
         return float((preds == df[target].astype(str)).mean())
 
     def _count_feature_usage(self, node: Optional[DecisionNode], counts: Dict[str, int]) -> None:
