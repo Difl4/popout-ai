@@ -184,6 +184,12 @@ class ID3Classifier:
             raise ValueError("DataFrame is empty")
         if target not in df.columns:
             raise ValueError(f"Target column '{target}' not found in DataFrame. Available columns: {list(df.columns)}")
+        if df.isnull().any().any():
+            nan_cols = df.columns[df.isnull().any()].tolist()
+            raise ValueError(
+                f"DataFrame contains NaN values in columns: {nan_cols}. "
+                "Impute or drop NaNs before calling fit()."
+            )
         self.target_name = target
         feature_cols = [c for c in df.columns if c != target]
 
@@ -235,11 +241,17 @@ class ID3Classifier:
         indices: np.ndarray,
         results: np.ndarray,
     ) -> None:
-        """Predict for a batch of rows simultaneously, avoiding per-row Python overhead."""
+        """Predict for a batch of rows simultaneously, avoiding per-row Python overhead.
+
+        Children are keyed by string representation of feature values (matching
+        how ``_build_fast`` stores them), so raw values must be cast to strings
+        before comparison; otherwise integer rows can never match string keys
+        and every row falls through to ``majority_label``.
+        """
         if node.is_leaf():
             results[indices] = node.label
             return
-        feat_vals = df[node.feature].values
+        feat_vals = df[node.feature].values.astype(str)
         for val, child in node.children.items():
             mask = feat_vals[indices] == val
             child_indices = indices[mask]
