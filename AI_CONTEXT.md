@@ -67,14 +67,8 @@ Important top-level files:
 - `environment.yml`: intended Conda environment, Python 3.10.
 - `setup.py`: editable package setup, currently minimal dependencies only.
 - `play.py`: direct GUI launcher.
-- `PROJECT_SUMMARY_AND_REVIEW.md`: previous review-style document with grading
-  and submission notes.
 - `AI_CONTEXT.md`: this AI handoff document.
-- `IA_2526_Trab.pdf`: assignment statement.
-- `compare_depth.py`: ID3 depth comparison and win-rate evaluation script.
-- `benchmark_reuse.py`: fresh-search vs tree-reuse benchmark script.
-- `compare_reuse_solvers.py`: correctness comparison for Python reuse solver vs
-  flat Numba reuse solver.
+- `docs/IA_2526_Trab.pdf`: assignment statement.
 
 Main source tree:
 
