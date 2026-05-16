@@ -9,9 +9,9 @@ variantes (UCT, MCTS-Solver, Numba JIT, *tree reuse*) e outro baseado em
 
 **Grupo**
 
-- [ALUNO 1: Nome Completo, Número Mecanográfico]
-- [ALUNO 2: Nome Completo, Número Mecanográfico]
-- [ALUNO 3: Nome Completo, Número Mecanográfico]
+- [Duarte Gomes: Duarte Meneses dos Santos Sousa Gomes, 202409386]
+- [José Sousa: José Paulo Pacheco de Sousa, 202405046]
+- [ALUNO 3: Tiago Braga da Cruz Frada de Sousa, 202405406]
 
 ---
 
