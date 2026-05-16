@@ -26,6 +26,6 @@ data/generated/**/*.progress
 
 #
 .agents
-.claude/worktrees/stupefied-wing
+.claude/
 .codex
 .pytest_cache
