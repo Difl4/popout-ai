@@ -596,32 +596,49 @@ def build():
     header(s, "Análise do Número de Filhos (k)",
            chip="03", subtitle="Requisito §4.1 — explorar diferentes números de filhos seleccionados")
 
-    # Left column
+    # Left column (filled, balanced height with right figure)
     add_text(s, 0.5, 1.30, 4.5, 0.40,
              "Variante TopK-UCT", size=14, bold=True, color=DEEP)
-    add_bullets(s, 0.5, 1.75, 4.5, 1.8, [
-        "Após todos os filhos visitados pelo menos 1×,\nlimita selecção aos top-K por UCT.",
+    add_bullets(s, 0.5, 1.75, 4.5, 1.30, [
+        "Após cada filho visitado pelo menos 1×, restringe a "
+        "selecção aos K filhos com maior UCT.",
         "Reduz ramos com baixa Q sem cortar exploração inicial.",
-        "Hiperparâmetro k controla largura.",
+        "Hiperparâmetro k controla a largura da pesquisa.",
     ], size=12)
 
-    add_text(s, 0.5, 3.60, 4.5, 0.40,
+    add_text(s, 0.5, 3.15, 4.5, 0.40,
              "Metodologia", size=14, bold=True, color=DEEP)
-    add_bullets(s, 0.5, 4.05, 4.5, 1.10, [
+    add_bullets(s, 0.5, 3.60, 4.5, 1.10, [
         "15 estados aleatórios  ·  600 iter por agente",
         "k ∈ {3, 5, 7, 14}  (todos)",
         "Métrica: consistência da jogada óptima",
     ], size=11, color=SLATE)
 
-    # Right — figure
+    # Highlighted finding box
+    add_rect(s, 0.5, 4.85, 4.5, 0.35, fill=AMBER)
+    add_text(s, 0.5, 4.85, 4.5, 0.35,
+             "k = 7 já preserva 100 % da consistência do baseline.",
+             size=11, bold=True, color=NAVY,
+             align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+
+    # Right — figure (aspect ratio 2.9:1, fits within content width)
     fig = FIG_DIR / "mcts_k_children.png"
     if fig.exists():
-        s.shapes.add_picture(str(fig), Inches(5.30), Inches(1.30),
-                             width=Inches(4.20))
+        s.shapes.add_picture(str(fig), Inches(5.20), Inches(1.30),
+                             width=Inches(4.30))
     else:
-        add_rect(s, 5.30, 1.30, 4.20, 3.60, fill=ICE)
-        add_text(s, 5.30, 2.95, 4.20, 0.30, "(mcts_k_children.png)",
+        add_rect(s, 5.20, 1.30, 4.30, 1.50, fill=ICE)
+        add_text(s, 5.20, 1.95, 4.30, 0.30, "(mcts_k_children.png)",
                  size=10, color=GRAY, align=PP_ALIGN.CENTER)
+
+    # Right — insights below figure (balances the left column visually)
+    add_text(s, 5.20, 3.00, 4.30, 0.35,
+             "Resultados observados", size=14, bold=True, color=DEEP)
+    add_bullets(s, 5.20, 3.40, 4.30, 1.40, [
+        "Consistência estável em k ∈ {3, 5, 7, 10, 14}.",
+        "Concordância com k=14 (standard) próxima de 33 %.",
+        "Custo computacional cresce linearmente com k.",
+    ], size=11, color=SLATE, spacing=3)
 
     footer(s, 8)
 
@@ -762,34 +779,42 @@ def build():
              size=13, bold=True, color=DEEP)
 
     # Bar chart manually (using rectangles)
+    # Labels live to the LEFT of bars (always readable); values to the RIGHT.
     bars = [
-        ("StandardUCT",    9, TEAL_LT),
-        ("NumbaMCTS",      50, TEAL),
-        ("FlatNumbaMCTS",  179, DEEP),
-        ("FlatNumbaSolverMCTS", 168, NAVY),
-        ("ReuseFlat (peak)", 13000, AMBER),
+        ("StandardUCT",         9,     TEAL_LT),
+        ("NumbaMCTS",           50,    TEAL),
+        ("FlatNumbaMCTS",       179,   DEEP),
+        ("FlatNumbaSolverMCTS", 168,   NAVY),
+        ("ReuseFlat (peak)",    13000, AMBER),
     ]
+    import math
     bar_max = max(b[1] for b in bars)
-    bar_y0 = 1.70
-    bar_h = 0.40
-    bar_gap = 0.10
-    chart_x = 5.30
-    chart_w = 3.0
+    bar_y0  = 1.70
+    bar_h   = 0.32
+    bar_gap = 0.12
+    label_x = 5.20
+    label_w = 1.50
+    chart_x = label_x + label_w + 0.05
+    chart_w = 2.10
     for i, (name, val, col) in enumerate(bars):
         y = bar_y0 + i * (bar_h + bar_gap)
-        # name on right of bar (just to the right of the chart)
-        # bar width is normalized
-        import math
-        w = max(0.15, math.log10(val + 1) / math.log10(bar_max + 1) * chart_w)
+        w = max(0.10, math.log10(val + 1) / math.log10(bar_max + 1) * chart_w)
+        # Left-side label (always readable)
+        add_text(s, label_x, y, label_w, bar_h, name,
+                 size=10, bold=True, color=DARK,
+                 align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
+        # Bar
         add_rect(s, chart_x, y, w, bar_h, fill=col)
-        add_text(s, chart_x, y - 0.02, w, bar_h + 0.04, name,
-                 size=9, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
-        # value label
-        label_val = f"{val:,}" if val < 1000 else f"{val // 1000}k" if val < 1000000 else f"{val/1000:.0f}k"
-        add_text(s, chart_x + w + 0.05, y, 1.0, bar_h, f"{label_val} iter/s",
-                 size=10, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
+        # Right-side value
+        if val >= 1000:
+            label_val = f"{val // 1000}k" if val < 1_000_000 else f"{val/1_000_000:.1f}M"
+        else:
+            label_val = f"{val}"
+        add_text(s, chart_x + w + 0.05, y, 0.85, bar_h,
+                 f"{label_val} iter/s",
+                 size=9, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
 
-    add_text(s, 5.20, 4.55, 4.3, 0.30,
+    add_text(s, 5.20, 4.50, 4.3, 0.25,
              "log-scale  ·  unidades: iter/s",
              size=9, color=GRAY, italic=True, align=PP_ALIGN.CENTER)
 
@@ -926,12 +951,12 @@ def build():
                  size=12, bold=True, color=WHITE,
                  align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE,
                  font=HEADER_FONT)
-        # arrow between boxes
+        # Chevron arrow between boxes — much clearer than a line connector
         if i < len(boxes) - 1:
-            ax = x + bw + 0.02
-            ay = flow_y + flow_h / 2
-            add_arrow(s, ax, ay, ax + gap - 0.04, ay,
-                      color=NAVY_DK, width=3)
+            ar_x = x + bw + 0.01
+            ar_y = flow_y + flow_h * 0.25
+            add_rect(s, ar_x, ar_y, gap - 0.02, flow_h * 0.50,
+                     shape=MSO_SHAPE.RIGHT_ARROW, fill=NAVY_DK)
 
     # KPIs row
     kpi_w = 2.10
@@ -1107,14 +1132,14 @@ def build():
         kpi_card(s, x, kpi_y, kw, kpi_h, val, lab,
                  accent=col, value_size=28, label_size=10)
 
-    # Figure
+    # Figure — constrain by HEIGHT (available: 5.30 − 2.95 = 2.35")
     fig = FIG_DIR / "speed_quality_tradeoff.png"
     if fig.exists():
         s.shapes.add_picture(str(fig), Inches(0.5), Inches(2.95),
-                             width=Inches(5.6))
+                             height=Inches(2.30))
     else:
-        add_rect(s, 0.5, 2.95, 5.6, 2.05, fill=ICE)
-        add_text(s, 0.5, 3.85, 5.6, 0.30,
+        add_rect(s, 0.5, 2.95, 5.6, 2.30, fill=ICE)
+        add_text(s, 0.5, 4.00, 5.6, 0.30,
                  "(speed_quality_tradeoff.png)",
                  size=10, color=GRAY, align=PP_ALIGN.CENTER)
 
