@@ -1,110 +1,110 @@
 agent_a,agent_b,iters_a,iters_b,games,w_a,l_a,d_a,w_a_p1,l_a_p1,d_a_p1,w_a_p2,l_a_p2,d_a_p2
-FlatNumbaMCTS 100,FlatNumbaMCTS 500,100,500,20,2,18,0,2,8,0,0,10,0
-FlatNumbaMCTS 100,FlatNumbaMCTS 1k,100,1000,20,3,17,0,2,8,0,1,9,0
-FlatNumbaMCTS 100,FlatNumbaMCTS 10k,100,10000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 100,FlatNumbaMCTS 100k,100,100000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 100,FlatNumbaSolver 100k,100,100000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 100,ReuseFlatSolver 100k,100,100000,20,0,20,0,0,10,0,0,10,0
+FlatNumbaMCTS 100,FlatNumbaMCTS 500,100,500,100,17,83,0,12,38,0,5,45,0
+FlatNumbaMCTS 100,FlatNumbaMCTS 1k,100,1000,100,10,90,0,7,43,0,3,47,0
+FlatNumbaMCTS 100,FlatNumbaMCTS 10k,100,10000,100,1,99,0,1,49,0,0,50,0
+FlatNumbaMCTS 100,FlatNumbaMCTS 100k,100,100000,100,0,100,0,0,50,0,0,50,0
+FlatNumbaMCTS 100,FlatNumbaSolver 100k,100,100000,100,0,100,0,0,50,0,0,50,0
+FlatNumbaMCTS 100,ReuseFlatSolver 100k,100,100000,100,1,99,0,1,49,0,0,50,0
+FlatNumbaMCTS 500,FlatNumbaMCTS 1k,500,1000,100,37,63,0,25,25,0,12,38,0
+FlatNumbaMCTS 500,FlatNumbaMCTS 10k,500,10000,100,8,92,0,6,44,0,2,48,0
+FlatNumbaMCTS 500,FlatNumbaMCTS 100k,500,100000,100,3,97,0,3,47,0,0,50,0
+FlatNumbaMCTS 500,FlatNumbaSolver 100k,500,100000,100,2,98,0,2,48,0,0,50,0
+FlatNumbaMCTS 500,ReuseFlatSolver 100k,500,100000,100,1,99,0,1,49,0,0,50,0
+FlatNumbaMCTS 1k,FlatNumbaMCTS 10k,1000,10000,100,20,79,1,16,33,1,4,46,0
+FlatNumbaMCTS 1k,FlatNumbaMCTS 100k,1000,100000,100,5,95,0,5,45,0,0,50,0
+FlatNumbaMCTS 1k,FlatNumbaSolver 100k,1000,100000,100,4,96,0,4,46,0,0,50,0
+FlatNumbaMCTS 1k,ReuseFlatSolver 100k,1000,100000,100,5,94,1,4,45,1,1,49,0
+FlatNumbaMCTS 10k,FlatNumbaMCTS 100k,10000,100000,100,16,78,6,15,29,6,1,49,0
+FlatNumbaMCTS 10k,FlatNumbaSolver 100k,10000,100000,100,0,100,0,0,50,0,0,50,0
+FlatNumbaMCTS 10k,ReuseFlatSolver 100k,10000,100000,100,0,99,1,0,49,1,0,50,0
+FlatNumbaMCTS 100k,FlatNumbaSolver 100k,100000,100000,100,49,51,0,49,1,0,0,50,0
+FlatNumbaMCTS 100k,ReuseFlatSolver 100k,100000,100000,100,47,53,0,47,3,0,0,50,0
+FlatNumbaSolver 100k,ReuseFlatSolver 100k,100000,100000,100,52,48,0,50,0,0,2,48,0
+ID3 v1 feat,ID3 Raw v1,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v1 feat,ID3 v2 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v1 feat,ID3 Raw v2,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v1 feat,ID3 v3 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v1 feat,ID3 Raw v3,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v1 feat,ID3 v4 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v1 feat,ID3 Raw v4,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v1,ID3 v2 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v1,ID3 Raw v2,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v1,ID3 v3 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v1,ID3 Raw v3,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v1,ID3 v4 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v1,ID3 Raw v4,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v2 feat,ID3 Raw v2,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v2 feat,ID3 v3 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v2 feat,ID3 Raw v3,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v2 feat,ID3 v4 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v2 feat,ID3 Raw v4,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v2,ID3 v3 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v2,ID3 Raw v3,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v2,ID3 v4 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v2,ID3 Raw v4,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v3 feat,ID3 Raw v3,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v3 feat,ID3 v4 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v3 feat,ID3 Raw v4,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v3,ID3 v4 feat,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 Raw v3,ID3 Raw v4,0,0,2,1,1,0,1,0,0,0,1,0
+ID3 v4 feat,ID3 Raw v4,0,0,2,1,1,0,1,0,0,0,1,0
 FlatNumbaMCTS 100,ID3 v1 feat,100,0,20,2,18,0,2,8,0,0,10,0
-FlatNumbaMCTS 100,ID3 Raw v1,100,0,20,4,16,0,3,7,0,1,9,0
-FlatNumbaMCTS 100,ID3 v2 feat,100,0,20,1,19,0,1,9,0,0,10,0
-FlatNumbaMCTS 100,ID3 Raw v2,100,0,20,2,18,0,2,8,0,0,10,0
-FlatNumbaMCTS 100,ID3 v3 feat,100,0,20,3,17,0,3,7,0,0,10,0
-FlatNumbaMCTS 100,ID3 Raw v3,100,0,20,1,19,0,1,9,0,0,10,0
-FlatNumbaMCTS 100,ID3 v4 feat,100,0,20,2,18,0,2,8,0,0,10,0
-FlatNumbaMCTS 100,ID3 Raw v4,100,0,20,2,18,0,2,8,0,0,10,0
-FlatNumbaMCTS 500,FlatNumbaMCTS 1k,500,1000,20,10,10,0,7,3,0,3,7,0
-FlatNumbaMCTS 500,FlatNumbaMCTS 10k,500,10000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 500,FlatNumbaMCTS 100k,500,100000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 500,FlatNumbaSolver 100k,500,100000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 500,ReuseFlatSolver 100k,500,100000,20,1,19,0,1,9,0,0,10,0
-FlatNumbaMCTS 500,ID3 v1 feat,500,0,20,8,12,0,7,3,0,1,9,0
-FlatNumbaMCTS 500,ID3 Raw v1,500,0,20,6,14,0,5,5,0,1,9,0
-FlatNumbaMCTS 500,ID3 v2 feat,500,0,20,6,14,0,6,4,0,0,10,0
-FlatNumbaMCTS 500,ID3 Raw v2,500,0,20,6,14,0,4,6,0,2,8,0
-FlatNumbaMCTS 500,ID3 v3 feat,500,0,20,9,11,0,7,3,0,2,8,0
-FlatNumbaMCTS 500,ID3 Raw v3,500,0,20,5,15,0,5,5,0,0,10,0
-FlatNumbaMCTS 500,ID3 v4 feat,500,0,20,6,14,0,4,6,0,2,8,0
-FlatNumbaMCTS 500,ID3 Raw v4,500,0,20,4,16,0,4,6,0,0,10,0
-FlatNumbaMCTS 1k,FlatNumbaMCTS 10k,1000,10000,20,2,18,0,2,8,0,0,10,0
-FlatNumbaMCTS 1k,FlatNumbaMCTS 100k,1000,100000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 1k,FlatNumbaSolver 100k,1000,100000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 1k,ReuseFlatSolver 100k,1000,100000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 1k,ID3 v1 feat,1000,0,20,12,8,0,9,1,0,3,7,0
-FlatNumbaMCTS 1k,ID3 Raw v1,1000,0,20,14,6,0,10,0,0,4,6,0
-FlatNumbaMCTS 1k,ID3 v2 feat,1000,0,20,11,9,0,10,0,0,1,9,0
-FlatNumbaMCTS 1k,ID3 Raw v2,1000,0,20,10,10,0,8,2,0,2,8,0
-FlatNumbaMCTS 1k,ID3 v3 feat,1000,0,20,8,12,0,7,3,0,1,9,0
-FlatNumbaMCTS 1k,ID3 Raw v3,1000,0,20,7,13,0,7,3,0,0,10,0
-FlatNumbaMCTS 1k,ID3 v4 feat,1000,0,20,5,15,0,3,7,0,2,8,0
-FlatNumbaMCTS 1k,ID3 Raw v4,1000,0,20,6,14,0,4,6,0,2,8,0
-FlatNumbaMCTS 10k,FlatNumbaMCTS 100k,10000,100000,20,1,19,0,1,9,0,0,10,0
-FlatNumbaMCTS 10k,FlatNumbaSolver 100k,10000,100000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 10k,ReuseFlatSolver 100k,10000,100000,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 10k,ID3 v1 feat,10000,0,20,10,10,0,9,1,0,1,9,0
-FlatNumbaMCTS 10k,ID3 Raw v1,10000,0,20,7,13,0,7,3,0,0,10,0
-FlatNumbaMCTS 10k,ID3 v2 feat,10000,0,20,7,13,0,6,4,0,1,9,0
-FlatNumbaMCTS 10k,ID3 Raw v2,10000,0,20,8,12,0,7,3,0,1,9,0
-FlatNumbaMCTS 10k,ID3 v3 feat,10000,0,20,11,9,0,10,0,0,1,9,0
-FlatNumbaMCTS 10k,ID3 Raw v3,10000,0,20,8,12,0,7,3,0,1,9,0
-FlatNumbaMCTS 10k,ID3 v4 feat,10000,0,20,2,18,0,2,8,0,0,10,0
-FlatNumbaMCTS 10k,ID3 Raw v4,10000,0,20,0,20,0,0,10,0,0,10,0
-FlatNumbaMCTS 100k,FlatNumbaSolver 100k,100000,100000,20,10,10,0,10,0,0,0,10,0
-FlatNumbaMCTS 100k,ReuseFlatSolver 100k,100000,100000,20,10,10,0,10,0,0,0,10,0
-FlatNumbaMCTS 100k,ID3 v1 feat,100000,0,20,13,7,0,10,0,0,3,7,0
+FlatNumbaMCTS 100,ID3 Raw v1,100,0,20,3,17,0,2,8,0,1,9,0
+FlatNumbaMCTS 100,ID3 v2 feat,100,0,20,0,20,0,0,10,0,0,10,0
+FlatNumbaMCTS 100,ID3 Raw v2,100,0,20,2,18,0,1,9,0,1,9,0
+FlatNumbaMCTS 100,ID3 v3 feat,100,0,20,5,15,0,4,6,0,1,9,0
+FlatNumbaMCTS 100,ID3 Raw v3,100,0,20,1,19,0,0,10,0,1,9,0
+FlatNumbaMCTS 100,ID3 v4 feat,100,0,20,0,20,0,0,10,0,0,10,0
+FlatNumbaMCTS 100,ID3 Raw v4,100,0,20,0,20,0,0,10,0,0,10,0
+FlatNumbaMCTS 500,ID3 v1 feat,500,0,20,10,9,1,7,3,0,3,6,1
+FlatNumbaMCTS 500,ID3 Raw v1,500,0,20,10,10,0,8,2,0,2,8,0
+FlatNumbaMCTS 500,ID3 v2 feat,500,0,20,9,11,0,6,4,0,3,7,0
+FlatNumbaMCTS 500,ID3 Raw v2,500,0,20,4,16,0,2,8,0,2,8,0
+FlatNumbaMCTS 500,ID3 v3 feat,500,0,20,6,14,0,4,6,0,2,8,0
+FlatNumbaMCTS 500,ID3 Raw v3,500,0,20,7,13,0,5,5,0,2,8,0
+FlatNumbaMCTS 500,ID3 v4 feat,500,0,20,3,17,0,2,8,0,1,9,0
+FlatNumbaMCTS 500,ID3 Raw v4,500,0,20,2,18,0,2,8,0,0,10,0
+FlatNumbaMCTS 1k,ID3 v1 feat,1000,0,20,9,11,0,4,6,0,5,5,0
+FlatNumbaMCTS 1k,ID3 Raw v1,1000,0,20,11,9,0,8,2,0,3,7,0
+FlatNumbaMCTS 1k,ID3 v2 feat,1000,0,20,11,9,0,7,3,0,4,6,0
+FlatNumbaMCTS 1k,ID3 Raw v2,1000,0,20,9,10,1,6,4,0,3,6,1
+FlatNumbaMCTS 1k,ID3 v3 feat,1000,0,20,7,13,0,6,4,0,1,9,0
+FlatNumbaMCTS 1k,ID3 Raw v3,1000,0,20,7,13,0,5,5,0,2,8,0
+FlatNumbaMCTS 1k,ID3 v4 feat,1000,0,20,6,14,0,6,4,0,0,10,0
+FlatNumbaMCTS 1k,ID3 Raw v4,1000,0,20,1,19,0,0,10,0,1,9,0
+FlatNumbaMCTS 10k,ID3 v1 feat,10000,0,20,12,8,0,10,0,0,2,8,0
+FlatNumbaMCTS 10k,ID3 Raw v1,10000,0,20,11,9,0,9,1,0,2,8,0
+FlatNumbaMCTS 10k,ID3 v2 feat,10000,0,20,8,12,0,8,2,0,0,10,0
+FlatNumbaMCTS 10k,ID3 Raw v2,10000,0,20,11,9,0,10,0,0,1,9,0
+FlatNumbaMCTS 10k,ID3 v3 feat,10000,0,20,12,8,0,10,0,0,2,8,0
+FlatNumbaMCTS 10k,ID3 Raw v3,10000,0,20,11,9,0,7,3,0,4,6,0
+FlatNumbaMCTS 10k,ID3 v4 feat,10000,0,20,0,20,0,0,10,0,0,10,0
+FlatNumbaMCTS 10k,ID3 Raw v4,10000,0,20,1,19,0,1,9,0,0,10,0
+FlatNumbaMCTS 100k,ID3 v1 feat,100000,0,20,11,9,0,10,0,0,1,9,0
 FlatNumbaMCTS 100k,ID3 Raw v1,100000,0,20,11,9,0,10,0,0,1,9,0
-FlatNumbaMCTS 100k,ID3 v2 feat,100000,0,20,10,10,0,10,0,0,0,10,0
+FlatNumbaMCTS 100k,ID3 v2 feat,100000,0,20,11,9,0,10,0,0,1,9,0
 FlatNumbaMCTS 100k,ID3 Raw v2,100000,0,20,10,10,0,10,0,0,0,10,0
-FlatNumbaMCTS 100k,ID3 v3 feat,100000,0,20,14,6,0,10,0,0,4,6,0
+FlatNumbaMCTS 100k,ID3 v3 feat,100000,0,20,17,3,0,10,0,0,7,3,0
 FlatNumbaMCTS 100k,ID3 Raw v3,100000,0,20,10,10,0,10,0,0,0,10,0
-FlatNumbaMCTS 100k,ID3 v4 feat,100000,0,20,9,11,0,9,1,0,0,10,0
-FlatNumbaMCTS 100k,ID3 Raw v4,100000,0,20,8,12,0,8,2,0,0,10,0
-FlatNumbaSolver 100k,ReuseFlatSolver 100k,100000,100000,20,11,9,0,10,0,0,1,9,0
-FlatNumbaSolver 100k,ID3 v1 feat,100000,0,20,10,10,0,10,0,0,0,10,0
-FlatNumbaSolver 100k,ID3 Raw v1,100000,0,20,10,10,0,10,0,0,0,10,0
+FlatNumbaMCTS 100k,ID3 v4 feat,100000,0,20,7,13,0,7,3,0,0,10,0
+FlatNumbaMCTS 100k,ID3 Raw v4,100000,0,20,10,10,0,10,0,0,0,10,0
+FlatNumbaSolver 100k,ID3 v1 feat,100000,0,20,8,12,0,8,2,0,0,10,0
+FlatNumbaSolver 100k,ID3 Raw v1,100000,0,20,9,11,0,9,1,0,0,10,0
 FlatNumbaSolver 100k,ID3 v2 feat,100000,0,20,10,10,0,10,0,0,0,10,0
-FlatNumbaSolver 100k,ID3 Raw v2,100000,0,20,10,10,0,10,0,0,0,10,0
-FlatNumbaSolver 100k,ID3 v3 feat,100000,0,20,10,10,0,10,0,0,0,10,0
+FlatNumbaSolver 100k,ID3 Raw v2,100000,0,20,8,12,0,8,2,0,0,10,0
+FlatNumbaSolver 100k,ID3 v3 feat,100000,0,20,9,11,0,9,1,0,0,10,0
 FlatNumbaSolver 100k,ID3 Raw v3,100000,0,20,10,10,0,10,0,0,0,10,0
-FlatNumbaSolver 100k,ID3 v4 feat,100000,0,20,8,12,0,8,2,0,0,10,0
-FlatNumbaSolver 100k,ID3 Raw v4,100000,0,20,9,11,0,9,1,0,0,10,0
-ReuseFlatSolver 100k,ID3 v1 feat,100000,0,20,10,10,0,10,0,0,0,10,0
-ReuseFlatSolver 100k,ID3 Raw v1,100000,0,20,10,10,0,10,0,0,0,10,0
-ReuseFlatSolver 100k,ID3 v2 feat,100000,0,20,9,11,0,9,1,0,0,10,0
+FlatNumbaSolver 100k,ID3 v4 feat,100000,0,20,10,10,0,10,0,0,0,10,0
+FlatNumbaSolver 100k,ID3 Raw v4,100000,0,20,10,10,0,10,0,0,0,10,0
+ReuseFlatSolver 100k,ID3 v1 feat,100000,0,20,9,11,0,9,1,0,0,10,0
+ReuseFlatSolver 100k,ID3 Raw v1,100000,0,20,9,11,0,9,1,0,0,10,0
+ReuseFlatSolver 100k,ID3 v2 feat,100000,0,20,8,12,0,8,2,0,0,10,0
 ReuseFlatSolver 100k,ID3 Raw v2,100000,0,20,9,11,0,9,1,0,0,10,0
-ReuseFlatSolver 100k,ID3 v3 feat,100000,0,20,10,10,0,10,0,0,0,10,0
-ReuseFlatSolver 100k,ID3 Raw v3,100000,0,20,8,12,0,8,2,0,0,10,0
-ReuseFlatSolver 100k,ID3 v4 feat,100000,0,20,10,10,0,10,0,0,0,10,0
-ReuseFlatSolver 100k,ID3 Raw v4,100000,0,20,9,11,0,9,1,0,0,10,0
-ID3 v1 feat,ID3 Raw v1,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v1 feat,ID3 v2 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v1 feat,ID3 Raw v2,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v1 feat,ID3 v3 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v1 feat,ID3 Raw v3,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v1 feat,ID3 v4 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v1 feat,ID3 Raw v4,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v1,ID3 v2 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v1,ID3 Raw v2,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v1,ID3 v3 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v1,ID3 Raw v3,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v1,ID3 v4 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v1,ID3 Raw v4,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v2 feat,ID3 Raw v2,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v2 feat,ID3 v3 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v2 feat,ID3 Raw v3,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v2 feat,ID3 v4 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v2 feat,ID3 Raw v4,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v2,ID3 v3 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v2,ID3 Raw v3,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v2,ID3 v4 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v2,ID3 Raw v4,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v3 feat,ID3 Raw v3,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v3 feat,ID3 v4 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v3 feat,ID3 Raw v4,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v3,ID3 v4 feat,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 Raw v3,ID3 Raw v4,0,0,20,10,10,0,10,0,0,0,10,0
-ID3 v4 feat,ID3 Raw v4,0,0,20,10,10,0,10,0,0,0,10,0
-ReuseFlatSolver 1M,FlatNumbaMCTS 100k,1000000,100000,10,5,5,0,5,0,0,0,5,0
-ReuseFlatSolver 1M,FlatNumbaSolver 100k,1000000,100000,10,5,5,0,5,0,0,0,5,0
-ReuseFlatSolver 1M,ReuseFlatSolver 100k,1000000,100000,10,5,5,0,5,0,0,0,5,0
-ReuseFlatSolver 1M,ID3 v4 feat,1000000,0,10,3,7,0,3,2,0,0,5,0
+ReuseFlatSolver 100k,ID3 v3 feat,100000,0,20,9,11,0,9,1,0,0,10,0
+ReuseFlatSolver 100k,ID3 Raw v3,100000,0,20,9,11,0,9,1,0,0,10,0
+ReuseFlatSolver 100k,ID3 v4 feat,100000,0,20,8,12,0,8,2,0,0,10,0
+ReuseFlatSolver 100k,ID3 Raw v4,100000,0,20,10,10,0,10,0,0,0,10,0
+ReuseFlatSolver 1M,FlatNumbaMCTS 100k,1000000,100000,100,62,38,0,50,0,0,12,38,0
+ReuseFlatSolver 1M,FlatNumbaSolver 100k,1000000,100000,100,47,53,0,46,4,0,1,49,0
+ReuseFlatSolver 1M,ReuseFlatSolver 100k,1000000,100000,100,45,55,0,43,7,0,2,48,0
+ReuseFlatSolver 1M,ID3 v4 feat,1000000,0,100,40,60,0,40,10,0,0,50,0

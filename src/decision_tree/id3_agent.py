@@ -73,10 +73,8 @@ class ID3Agent:
 
         # Fast path: load pre-trained model from pickle
         if self._pickle_path.exists():
-            print(f"  [ID3Agent] A carregar modelo de {self._pickle_path} ...")
             with open(self._pickle_path, "rb") as f:
                 self._classifier = pickle.load(f)
-            print("  [ID3Agent] Modelo carregado.")
             return
 
         # Slow path: train from CSV and save pickle for future runs
@@ -89,11 +87,9 @@ class ID3Agent:
         else:
             fallback = Path(self.FALLBACK_DATASET)
             if fallback.exists():
-                print(f"  [ID3Agent] Dataset do notebook não encontrado; a usar fallback {fallback}")
                 df = pd.read_csv(fallback)
             else:
                 from src.decision_tree.dataset_generator import generate_dataset
-                print(f"  [ID3Agent] Gerando dataset de fallback ({self._n_samples} amostras)...")
                 df = generate_dataset(
                     variant="uct_standard",
                     n_samples=self._n_samples,
@@ -114,7 +110,6 @@ class ID3Agent:
                 del proven
                 gc.collect()
 
-        print(f"  [ID3Agent] A treinar ID3 (depth={self._max_depth}, {len(df)} linhas)...")
 
         # Convert to strings in-place column by column to avoid a full copy.
         for col in feature_cols:
@@ -131,7 +126,6 @@ class ID3Agent:
         self._pickle_path.parent.mkdir(parents=True, exist_ok=True)
         with open(self._pickle_path, "wb") as f:
             pickle.dump(clf, f)
-        print(f"  [ID3Agent] Modelo guardado em {self._pickle_path}")
         return clf
 
     # ── Interface MCTSEngine ──────────────────────────────────────────────────

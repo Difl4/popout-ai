@@ -13,6 +13,10 @@ _ROOT = Path(__file__).resolve().parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+# ID3 agents are stateless after loading — cache them once per worker process
+# so each pickle is loaded exactly once rather than once per game.
+_ID3_CACHE: dict[str, object] = {}
+
 
 def init_worker() -> None:
     """Called once per worker process at startup — warms up Numba JIT."""
@@ -50,8 +54,15 @@ def run_game_task(task: tuple) -> int:
         p1_key, p1_iters = agent_b_key, iters_b
         p2_key, p2_iters = agent_a_key, iters_a
 
-    p1 = get_agent(p1_key)
-    p2 = get_agent(p2_key)
+    def _get(key: str):
+        if key.startswith("id3"):
+            if key not in _ID3_CACHE:
+                _ID3_CACHE[key] = get_agent(key)
+            return _ID3_CACHE[key]
+        return get_agent(key)
+
+    p1 = _get(p1_key)
+    p2 = _get(p2_key)
 
     board = PopOutBoard()
     sig_count: Counter = Counter()
