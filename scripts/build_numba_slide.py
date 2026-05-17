@@ -179,13 +179,13 @@ def build():
 
     # ── Performance bar chart (log-scale, units: iter/s) ─────────────────────
     # Numbers measured on the project's own benchmark (Technical_Documentation
-    # notebook + fresh re-run on the dev machine). Raw kernel throughput; reuse
-    # does NOT increase raw iter/s — its benefit is described in the lower strip.
+    # notebook + fresh re-run on the dev machine). Slide scope is Numba +
+    # FlatNumba only; tree-reuse / Solver variants live in a separate slide
+    # because reuse does not change raw iter/s.
     bars = [
-        ("StandardUCT",                "Python baseline",      5_000,    TEAL_LT),
-        ("NumbaMCTS",                  "Objects + JIT",       30_000,    TEAL),
-        ("FlatNumbaMCTS",              "Arrays + JIT",       220_000,    DEEP),
-        ("ReuseFlat Solver",           "Arrays + JIT + reuse", 220_000,  AMBER),
+        ("StandardUCT",     "Python baseline",   5_000, TEAL_LT),
+        ("NumbaMCTS",       "Objects + JIT",    30_000, TEAL),
+        ("FlatNumbaMCTS",   "Arrays + JIT",    220_000, DEEP),
     ]
     chart_y0  = 3.55
     label_x   = 0.50
@@ -194,8 +194,8 @@ def build():
     desc_w    = 1.40
     chart_x   = desc_x + desc_w + 0.05
     chart_w   = 2.60
-    bar_h     = 0.22
-    bar_gap   = 0.06
+    bar_h     = 0.30
+    bar_gap   = 0.10
     bar_max   = max(b[2] for b in bars)
 
     for i, (name, desc, val, col) in enumerate(bars):
@@ -241,24 +241,24 @@ def build():
     strip_y = 4.95
     strip_h = 0.50
 
-    # Left half — what tree reuse actually buys you (since raw iter/s is unchanged)
+    # Left half — speedup composition
     add_rect(s, 0.5, strip_y, 5.70, strip_h, fill=ICE)
     add_rect(s, 0.5, strip_y, 0.10, strip_h, fill=DEEP)
     add_text(s, 0.70, strip_y + 0.04, 5.40, 0.22,
-             "What tree reuse really buys",
+             "Where the ~44× comes from",
              size=10, bold=True, color=NAVY)
     add_text(s, 0.70, strip_y + 0.25, 5.40, 0.22,
-             "Raw iter/s ~ unchanged; reuse compounds search effort across "
-             "turns (~12% inherited) — same kernel, deeper effective tree.",
+             "Numba JIT alone: ~6×  (5 k → 30 k)   ·   "
+             "Flat-array layout: another ~7×  (30 k → 220 k).",
              size=9, color=SLATE, italic=True)
 
-    # Right half — solver early termination
+    # Right half — practical impact
     add_rect(s, 6.30, strip_y, 3.20, strip_h, fill=ICE)
     add_rect(s, 6.30, strip_y, 0.10, strip_h, fill=FOREST)
     add_text(s, 6.50, strip_y + 0.04, 2.95, 0.22,
-             "Solver early exit", size=10, bold=True, color=NAVY)
+             "Practical impact", size=10, bold=True, color=NAVY)
     add_text(s, 6.50, strip_y + 0.25, 2.95, 0.22,
-             "Proven positions return in < 1 ms via AND/OR propagation.",
+             "Competitive moves in ~50 ms · real-time GUI play.",
              size=9, color=SLATE, italic=True)
 
     # ── Save ─────────────────────────────────────────────────────────────────
