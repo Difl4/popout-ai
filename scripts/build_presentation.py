@@ -781,11 +781,11 @@ def build():
     # Bar chart manually (using rectangles)
     # Labels live to the LEFT of bars (always readable); values to the RIGHT.
     bars = [
-        ("StandardUCT",         9,     TEAL_LT),
-        ("NumbaMCTS",           50,    TEAL),
-        ("FlatNumbaMCTS",       179,   DEEP),
-        ("FlatNumbaSolverMCTS", 168,   NAVY),
-        ("ReuseFlat (peak)",    13000, AMBER),
+        ("StandardUCT",         9_000,      TEAL_LT),
+        ("NumbaMCTS",           50_000,     TEAL),
+        ("FlatNumbaMCTS",       179_000,    DEEP),
+        ("FlatNumbaSolverMCTS", 168_000,    NAVY),
+        ("ReuseFlat (peak)",    13_000_000, AMBER),
     ]
     import math
     bar_max = max(b[1] for b in bars)
@@ -806,11 +806,13 @@ def build():
         # Bar
         add_rect(s, chart_x, y, w, bar_h, fill=col)
         # Right-side value
-        if val >= 1000:
-            label_val = f"{val // 1000}k" if val < 1_000_000 else f"{val/1_000_000:.1f}M"
+        if val >= 1_000_000:
+            label_val = f"{val // 1_000_000} M"
+        elif val >= 1000:
+            label_val = f"{val // 1000} k"
         else:
             label_val = f"{val}"
-        add_text(s, chart_x + w + 0.05, y, 0.85, bar_h,
+        add_text(s, chart_x + w + 0.05, y, 0.95, bar_h,
                  f"{label_val} iter/s",
                  size=9, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
 
