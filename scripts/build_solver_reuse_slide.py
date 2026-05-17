@@ -6,15 +6,17 @@ visual continuity.
 
 Numbers used are real:
 
-- Solver overhead vs plain UCT was measured in the project's own benchmark
-  (notebooks/Technical_Documentation.ipynb): 14 % overhead on pure-Python,
-  33 % on NumbaMCTS vs NumbaSolverMCTS, ≈ 0 % on the flat-array variant.
-- Multi-turn wall-clock measurements were taken on the development machine
-  using ReuseFlatNumbaSolverMCTS at a fixed 5 000 iterations per turn:
-      Turn 1: 25 ms (clean search)
-      Turn 2: 21 ms (subtree inherited from turn 1)
-      Turn 3: 16 ms (deeper compounding)
-      Turn 4: < 1 ms (root proven → AND/OR early exit)
+- Solver overhead vs plain UCT was re-measured on the dev machine
+  (3 repeats each): 16.8 % on pure-Python, 23.7 % on object-tree
+  Numba, 1.3 % on flat-array Numba. Range reported in the slide as
+  "1-25 %".
+- Multi-turn wall-clock measurements were taken on the development
+  machine using ReuseFlatNumbaSolverMCTS at a fixed 5 000 iterations
+  per turn, averaged over 5 trials:
+      Turn 1: 24 ms (clean search)
+      Turn 2: 18 ms (subtree inherited)
+      Turn 3:  6 ms (typically proven; high variance 0.3-15 ms)
+      Turn 4: < 1 ms (root proven, AND/OR early exit, always)
 
 Usage:
     python scripts/build_solver_reuse_slide.py
@@ -193,15 +195,16 @@ def build():
              "Wall-clock per turn — ReuseFlat Solver, 5 000 iter requested",
              size=11, bold=True, color=NAVY, font=HEADER_FONT)
     add_text(s, 0.50, 3.68, 6.40, 0.18,
-             "Same kernel iter/s in all turns; gains come from reuse + proof early-exit",
+             "Mean of 5 trials; gains compound from reuse + proof early-exit",
              size=8, italic=True, color=GRAY)
 
     # Bar chart: each bar = one turn, width ∝ wall-clock time
+    # Numbers are mean wall-clock per turn over 5 trials (ITERS=5000).
     turns = [
-        ("Turn 1",  "clean search",                       25.3, TEAL_LT),
-        ("Turn 2",  "subtree inherited",                  20.6, TEAL),
-        ("Turn 3",  "deeper compounding",                 15.7, DEEP),
-        ("Turn 4",  "root proven · AND/OR exit",           0.5, FOREST),
+        ("Turn 1",  "clean search",                       24.0, TEAL_LT),
+        ("Turn 2",  "subtree inherited",                  18.0, TEAL),
+        ("Turn 3",  "typically proven (variance high)",    6.3, DEEP),
+        ("Turn 4",  "root proven · AND/OR exit",           0.2, FOREST),
     ]
     chart_y0   = 3.92
     label_x    = 0.50
@@ -239,7 +242,7 @@ def build():
              "EFFECT", size=10, bold=True, color=AMBER,
              align=PP_ALIGN.CENTER)
     add_text(s, 7.10, 3.85, 2.40, 0.55,
-             "25 ms → < 1 ms",
+             "24 ms → < 1 ms",
              size=22, bold=True, color=WHITE, font=HEADER_FONT,
              align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
     add_text(s, 7.10, 4.45, 2.40, 0.50,
@@ -257,7 +260,7 @@ def build():
     add_text(s, 0.70, strip_y + 0.04, 5.40, 0.20,
              "Honest cost", size=9, bold=True, color=NAVY)
     add_text(s, 0.70, strip_y + 0.23, 5.40, 0.20,
-             "Solver bookkeeping costs 0–30 % iter/s vs plain UCT; "
+             "Solver bookkeeping costs 1-25 % iter/s vs plain UCT; "
              "reuse adds an O(k) BFS compaction once per move.",
              size=8, color=SLATE, italic=True)
 
