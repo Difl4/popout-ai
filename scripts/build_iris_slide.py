@@ -3,32 +3,36 @@
 Output: docs/iris_slide.pptx — one slide (16:9), matching the visual language
 of the Numba and Solver+Reuse slides.
 
-All numbers are extracted directly from the project's own evaluation:
-notebooks/ID3_Decision_Tree.ipynb cells 8, 12, 14.
+All numbers reproduced from the current code (matches the methodology
+in notebooks/ID3_Decision_Tree.ipynb cells 8/12/14, but freshly run so
+the figures are guaranteed in sync with src/decision_tree/id3/learner.py
+as it stands today).
 
   Methodology
     - Quantile discretisation, q = 3 bins per feature
     - 5 × 10-fold cross-validation  =  50 independent train/test runs
+    - Seed schedule: rep * 100  (matches the notebook)
+    - max_depth = 10
     - Discretiser fit inside each fold on the training partition only
       (no leakage from test into train)
 
   Accuracy across 50 folds
-    Mean : 95.07 %
-    Std  :  5.63 %
-    Min  : 80.00 %
+    Mean : 94.67 %
+    Std  :  6.39 %
+    Min  : 73.33 %
     Max  : 100.00 %
 
-  Per-class metrics (support = 250 each)
+  Per-class metrics (support = 250 each — 50 test samples × 5 reps)
     Class            Precision   Recall   F1
     Iris-setosa        0.996     0.976   0.986
-    Iris-versicolor    0.938     0.912   0.925
-    Iris-virginica     0.920     0.964   0.941
+    Iris-versicolor    0.923     0.916   0.920
+    Iris-virginica     0.922     0.948   0.935
 
-  Feature importance (normalised split count)
-    sepalwidth   33.33 %
-    sepallength  33.33 %
-    petalwidth   22.22 %
-    petallength  11.11 %
+  Feature importance (normalised split count, full-data tree, 8 splits)
+    sepallength  37.50 %
+    petallength  25.00 %
+    sepalwidth   25.00 %
+    petalwidth   12.50 %
 
 Usage:
     python scripts/build_iris_slide.py
@@ -211,8 +215,8 @@ def build():
 
     classes = [
         ("Iris-setosa",     "0.996", "0.976", "0.986", FOREST),
-        ("Iris-versicolor", "0.938", "0.912", "0.925", DEEP),
-        ("Iris-virginica",  "0.920", "0.964", "0.941", ROSE),
+        ("Iris-versicolor", "0.923", "0.916", "0.920", DEEP),
+        ("Iris-virginica",  "0.922", "0.948", "0.935", ROSE),
     ]
     row_h = 0.28
     for i, (name, p, r, f1, col) in enumerate(classes):
@@ -240,8 +244,8 @@ def build():
 
     bars = [
         ("Iris-setosa",     0.986, FOREST),
-        ("Iris-versicolor", 0.925, DEEP),
-        ("Iris-virginica",  0.941, ROSE),
+        ("Iris-versicolor", 0.920, DEEP),
+        ("Iris-virginica",  0.935, ROSE),
     ]
     chart_y0 = 3.95
     label_x  = 0.50
@@ -273,15 +277,15 @@ def build():
              "OVERALL ACCURACY", size=9, bold=True, color=AMBER,
              align=PP_ALIGN.CENTER)
     add_text(s, 7.10, 3.82, 2.40, 0.55,
-             "95.07 %",
+             "94.67 %",
              size=28, bold=True, color=WHITE, font=HEADER_FONT,
              align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
     add_text(s, 7.10, 4.40, 2.40, 0.24,
-             "± 5.63 %  (50 folds)",
+             "± 6.39 %  (50 folds)",
              size=10, italic=True, color=TEAL_LT,
              align=PP_ALIGN.CENTER)
     add_text(s, 7.10, 4.66, 2.40, 0.24,
-             "min 80 %   ·   max 100 %",
+             "min 73 %   ·   max 100 %",
              size=8, italic=True, color=TEAL_LT,
              align=PP_ALIGN.CENTER)
 
@@ -296,8 +300,8 @@ def build():
              "Feature importance (normalised split count)",
              size=9, bold=True, color=NAVY)
     add_text(s, 0.70, strip_y + 0.23, 5.40, 0.20,
-             "sepal-width 33 %  ·  sepal-length 33 %  ·  "
-             "petal-width 22 %  ·  petal-length 11 %",
+             "sepal-length 37 %  ·  petal-length 25 %  ·  "
+             "sepal-width 25 %  ·  petal-width 12 %",
              size=8, color=SLATE, italic=True)
 
     # Right — reproducibility note
