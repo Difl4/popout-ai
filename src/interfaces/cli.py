@@ -325,14 +325,21 @@ def run_cvc(
 
 
 _AGENTS = {
-    "1": ("standard",          "StandardUCT"),
-    "2": ("experimental",      "ExperimentalUCT"),
-    "3": ("solver",            "SolverMCTS"),
-    "4": ("numba",             "NumbaMCTS"),
-    "5": ("flat_numba",        "FlatNumbaMCTS"),
-    "6": ("numba_solver",      "NumbaSolverMCTS"),
-    "7": ("flat_numba_solver", "FlatNumbaSolverMCTS"),
-    "8": ("id3",               "ID3Agent (Decision Tree)"),
+    "1":  ("standard",           "StandardUCT"),
+    "2":  ("experimental",       "ExperimentalUCT"),
+    "3":  ("solver",             "SolverMCTS"),
+    "4":  ("numba",              "NumbaMCTS"),
+    "5":  ("flat_numba",         "FlatNumbaMCTS"),
+    "6":  ("numba_solver",       "NumbaSolverMCTS"),
+    "7":  ("flat_numba_solver",  "FlatNumbaSolverMCTS"),
+    "8":  ("id3_v1",             "ID3 v1 — features (3k games)"),
+    "9":  ("id3_raw_v1",         "ID3 Raw v1 — células brutas (3k games)"),
+    "10": ("id3_v2",             "ID3 v2 — features (5k games)"),
+    "11": ("id3_raw_v2",         "ID3 Raw v2 — células brutas (5k games)"),
+    "12": ("id3_v3",             "ID3 v3 — features (tiered)"),
+    "13": ("id3_raw_v3",         "ID3 Raw v3 — células brutas (tiered)"),
+    "14": ("id3_v4",             "ID3 v4 — features (75k games)"),
+    "15": ("id3_raw_v4",         "ID3 Raw v4 — células brutas (75k games)"),
 }
 
 

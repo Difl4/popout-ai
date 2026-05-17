@@ -77,6 +77,18 @@ def get_agent(name: str, **kwargs: Any):
         kwargs.setdefault("pickle_path", str(_v1 / "id3_model_raw.pkl"))
         kwargs.setdefault("dataset_path", str(_v1 / "popout_dt_dataset.csv"))
         return ID3AgentRaw(**kwargs)
+    elif name == "id3_v2":
+        from src.decision_tree.id3_agent import ID3Agent
+        _v2 = _PROJECT_ROOT / "data/generated/v2_5000games_100k"
+        kwargs.setdefault("pickle_path", str(_v2 / "id3_model.pkl"))
+        kwargs.setdefault("dataset_path", str(_v2 / "popout_dt_dataset.csv"))
+        return ID3Agent(**kwargs)
+    elif name == "id3_raw_v2":
+        from src.decision_tree.id3_agent_raw import ID3AgentRaw
+        _v2 = _PROJECT_ROOT / "data/generated/v2_5000games_100k"
+        kwargs.setdefault("pickle_path", str(_v2 / "id3_model_raw.pkl"))
+        kwargs.setdefault("dataset_path", str(_v2 / "popout_dt_dataset.csv"))
+        return ID3AgentRaw(**kwargs)
     elif name == "id3_v3":
         from src.decision_tree.id3_agent import ID3Agent
         _v3 = _PROJECT_ROOT / "data/generated/v3_5000games_tiered"
@@ -106,5 +118,5 @@ def get_agent(name: str, **kwargs: Any):
             f"Unknown agent '{name}'. "
             "Valid names: standard, experimental, solver, numba, flat_numba, "
             "numba_solver, flat_numba_solver, reuse_solver, reuse_flat_numba_solver, "
-            "id3, id3_raw, id3_v1, id3_raw_v1, id3_v3, id3_raw_v3, id3_v4, id3_raw_v4."
+            "id3, id3_raw, id3_v1, id3_raw_v1, id3_v2, id3_raw_v2, id3_v3, id3_raw_v3, id3_v4, id3_raw_v4."
         )

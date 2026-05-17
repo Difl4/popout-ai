@@ -20,49 +20,50 @@ variantes (UCT, MCTS-Solver, Numba JIT, *tree reuse*) e outro baseado em
 ```text
 popout-ai/
 ├── docs/
-│   ├── IA_2526_Trab.pdf            # Enunciado oficial
-│   └── autoavaliacao.md            # Ficheiro de auto-avaliação
+│   └── IA_2526_Trab.pdf                     # Enunciado oficial
 ├── src/
-│   ├── __main__.py                 # Entry point: python -m src
-│   ├── config.py                   # Dimensões do tabuleiro
+│   ├── __main__.py                          # Entry point: python -m src
+│   ├── config.py                            # Dimensões do tabuleiro (7×6, WIN=4)
 │   ├── engine/
-│   │   ├── standard/               # Bitboard + regras em Python puro
-│   │   └── optimized/              # Mirror em Numba JIT (@njit)
+│   │   ├── standard/                        # Bitboard + regras em Python puro
+│   │   └── optimized/                       # Mirror em Numba JIT (@njit)
 │   ├── mcts/
-│   │   ├── factory.py              # get_agent("nome") → instância
-│   │   ├── protocol.py             # MCTSEngine (runtime-checkable Protocol)
-│   │   ├── standard/               # BaseMCTS, StandardUCT, ExperimentalUCT, SolverMCTS, ReuseSolverMCTS
-│   │   └── optimized/              # NumbaMCTS, FlatNumbaMCTS, NumbaSolverMCTS,
-│   │                               # FlatNumbaSolverMCTS, ReuseFlatNumbaSolverMCTS
+│   │   ├── factory.py                       # get_agent("nome") → instância
+│   │   ├── protocol.py                      # MCTSEngine (runtime-checkable Protocol)
+│   │   ├── standard/                        # StandardUCT, ExperimentalUCT, SolverMCTS, ReuseSolverMCTS
+│   │   └── optimized/                       # NumbaMCTS, FlatNumbaMCTS, NumbaSolverMCTS,
+│   │                                        # FlatNumbaSolverMCTS, ReuseFlatNumbaSolverMCTS
 │   ├── decision_tree/
-│   │   ├── id3/learner.py          # Classificador ID3 (sem scikit-learn)
-│   │   ├── discretizer.py          # Discretização quantile (Iris)
-│   │   ├── dataset_generator.py    # Geração paralela (state, best_move) via MCTS
-│   │   ├── id3_agent.py            # Agente híbrido: _forced_move + ID3+features
-│   │   └── id3_agent_raw.py        # Agente híbrido: _forced_move + ID3 raw cells
+│   │   ├── id3/learner.py                   # Classificador ID3 (sem scikit-learn)
+│   │   ├── discretizer.py                   # Discretização quantile
+│   │   ├── dataset_generator.py             # Geração paralela de (estado, best_move) via MCTS
+│   │   ├── game_eval.py                     # Avaliação paralela de agentes (usado pelo pipeline notebook)
+│   │   ├── id3_agent.py                     # Agente híbrido: _forced_move + ID3 + features
+│   │   └── id3_agent_raw.py                 # Agente híbrido: _forced_move + ID3 células brutas
 │   ├── interfaces/
-│   │   ├── cli.py                  # CLI: HvH, HvC, CvC, torneio
-│   │   └── gui/                    # GUI Pygame (PvP, HvC, Arena CvC)
-│   └── utils/numba_tools.py        # Gestão de cache Numba
+│   │   ├── cli.py                           # CLI: HvH, HvC, CvC, torneio
+│   │   └── gui/                             # GUI Pygame (PvP, HvC, Arena CvC)
+│   └── utils/numba_tools.py                 # Gestão de cache Numba
 ├── data/
-│   ├── figures/                    # PNGs de benchmarks e visualizações
-│   └── generated/                  # Datasets CSV + modelos ID3 pickle (v1..v4)
+│   ├── iris.csv                             # Dataset Iris (exercício ID3 de aquecimento)
+│   ├── figures/                             # PNGs de benchmarks e visualizações
+│   └── generated/                           # Datasets CSV + modelos pickle treinados
+│       ├── tournament/                      # Resultados do torneio round-robin completo
+│       └── v1..v4/                          # popout_dt_dataset.csv, id3_model.pkl,
+│                                            # id3_model_raw.pkl, results/
 ├── notebooks/
-│   ├── PopOut_Solution.ipynb              # Notebook principal da entrega
-│   ├── ID3_Decision_Tree.ipynb            # Iris warm-up
+│   ├── PopOut_Full_Report.ipynb             # Relatório técnico completo (entrega principal)
 │   ├── PopOut_Decision_Tree_Pipeline.ipynb  # Pipeline ID3 detalhado
-│   └── iris.csv                            # Dataset Iris
-├── scripts/
-│   ├── apply_leakage_fix.py        # Reproduz análise 3-split de leakage
-│   ├── oversample_experiment.py    # Compara OVERSAMPLE_FACTOR ∈ {4,8,16}
-│   ├── solve_probe.py              # Sonda o MCTS-Solver em PopOut
-│   ├── train_id3.py                # Treina ID3+features e grava .pkl
-│   └── train_id3_raw.py            # Treina ID3 raw e grava .pkl
-├── tests/                          # Suite pytest (~17 ficheiros)
-├── environment.yml                 # Ambiente Conda (recomendado)
-├── setup.py                        # pip install -e .
-├── README.md
-└── AI_CONTEXT.md                   # Briefing técnico (uso interno)
+│   └── ID3_Decision_Tree.ipynb             # Iris warm-up
+├── scripts/                                 # Scripts experimentais e utilitários auxiliares
+│   ├── oversample_experiment.py             # Compara OVERSAMPLE_FACTOR ∈ {4, 8, 16}
+│   ├── solve_probe.py                       # Sonda de prova do MCTS-Solver em PopOut
+│   └── tournament_worker.py                 # Worker de torneios paralelos (ProcessPoolExecutor)
+├── tests/                                   # Suite pytest (18 ficheiros)
+├── play.py                                  # Atalho para lançar a GUI (equivalente a python -m src)
+├── environment.yml                          # Ambiente Conda (recomendado)
+├── setup.py                                 # pip install -e .
+└── README.md
 ```
 
 ---
@@ -103,12 +104,14 @@ pip install -e .[dev]
 
 ```bash
 python -m src
+# ou equivalentemente:
+python play.py
 ```
 
 Modos disponíveis no menu inicial:
 
 - **PvP** — Humano vs Humano.
-- **Humano vs IA** — selecciona dificuldade (100 a 100 000 iterações MCTS, ou um dos 6 modelos ID3 pré-treinados).
+- **Humano vs IA** — selecciona dificuldade (100 a 100 000 iterações MCTS, ou um dos modelos ID3 pré-treinados).
 - **Arena** — Computador vs Computador, dois agentes seleccionáveis independentemente.
 
 ### CLI
@@ -124,10 +127,12 @@ Modos: 1) HvH, 2) HvC, 3) CvC (torneio com configuração de agentes e número d
 ### Notebooks
 
 ```bash
-jupyter notebook notebooks/PopOut_Solution.ipynb
+jupyter notebook notebooks/PopOut_Full_Report.ipynb
 ```
 
-O notebook principal é `PopOut_Solution.ipynb` — entry point da entrega.
+- **`PopOut_Full_Report.ipynb`** — relatório técnico completo; ponto de entrada da entrega.
+- **`PopOut_Decision_Tree_Pipeline.ipynb`** — pipeline detalhado do ID3: geração de dataset, treino, avaliação paralela.
+- **`ID3_Decision_Tree.ipynb`** — exercício de aquecimento com o dataset Iris.
 
 ---
 
@@ -147,7 +152,7 @@ ID3, discretização, dataset generator e integração.
 | Cenário | GUI | CLI |
 |---------|-----|-----|
 | Humano vs Humano | ✓ PvP | ✓ |
-| Humano vs Computador | ✓ (13 dificuldades) | ✓ (escolha de agente) |
+| Humano vs Computador | ✓ (múltiplas dificuldades) | ✓ (escolha de agente) |
 | Computador vs Computador | ✓ Arena | ✓ Torneio configurável |
 
 ---
@@ -155,5 +160,4 @@ ID3, discretização, dataset generator e integração.
 ## Documentos relacionados
 
 - [`docs/IA_2526_Trab.pdf`](docs/IA_2526_Trab.pdf) — enunciado oficial.
-- [`docs/autoavaliacao.md`](docs/autoavaliacao.md) — ficheiro de auto-avaliação.
-- `AI_CONTEXT.md` — briefing técnico estruturado para handoff e revisão.
+- [github.com/Difl4/popout-ai](https://github.com/Difl4/popout-ai) — repositório GitHub.
