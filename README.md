@@ -188,5 +188,6 @@ The suite covers: game rules, bitboard engine, standard MCTS, MCTS-Solver, Numba
 
 ## Related Documents
 
-- [`docs/IA_2526_Trab.pdf`](docs/IA_2526_Trab.pdf) — official assignment brief.
-- [github.com/Difl4/popout-ai](https://github.com/Difl4/popout-ai) — GitHub repository.
+- [`docs/IA_2526_Trab.pdf`](docs/IA_2526_Trab.pdf) - official assignment brief.
+- [github.com/Difl4/popout-ai](https://github.com/Difl4/popout-ai) - GitHub repository.
+- [`popout-ai_presentation.pdf](popout-ai_presentation.pdf) - Presentation slides
