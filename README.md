@@ -9,9 +9,9 @@ variantes (UCT, MCTS-Solver, Numba JIT, *tree reuse*) e outro baseado em
 
 **Grupo**
 
-- [Duarte Gomes: Duarte Meneses dos Santos Sousa Gomes, 202409386]
-- [José Sousa: José Paulo Pacheco de Sousa, 202405046]
-- [ALUNO 3: Tiago Braga da Cruz Frada de Sousa, 202405406]
+- [Duarte Meneses dos Santos Sousa Gomes, 202409386]
+- [José Paulo Pacheco de Sousa, 202405046]
+- [Tiago Braga da Cruz Frada de Sousa, 202405406]
 
 ---
 
