@@ -64,10 +64,8 @@ class ID3AgentRaw:
         if self._classifier is not None:
             return
         if self._pickle_path.exists():
-            print(f"  [ID3AgentRaw] A carregar modelo de {self._pickle_path} ...")
             with open(self._pickle_path, "rb") as f:
                 self._classifier = pickle.load(f)
-            print("  [ID3AgentRaw] Modelo carregado.")
             return
         self._classifier = self._train_and_save()
 
@@ -87,8 +85,6 @@ class ID3AgentRaw:
                 del proven
                 gc.collect()
 
-        print(f"  [ID3AgentRaw] A treinar ID3 (depth={self._max_depth}, "
-              f"{len(df)} linhas, {len(feature_cols)} features brutas)...")
 
         for col in feature_cols:
             df[col] = df[col].astype(str)
@@ -103,7 +99,6 @@ class ID3AgentRaw:
         self._pickle_path.parent.mkdir(parents=True, exist_ok=True)
         with open(self._pickle_path, "wb") as f:
             pickle.dump(clf, f)
-        print(f"  [ID3AgentRaw] Modelo guardado em {self._pickle_path}")
         return clf
 
     # ── Interface MCTSEngine ──────────────────────────────────────────────────
