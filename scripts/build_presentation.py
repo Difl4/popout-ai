@@ -573,7 +573,7 @@ def build():
         ("ExperimentalUCT",   "Prioriza não-visitados",               DEEP),
         ("TopK-UCT",          "Limita a k filhos  (§4.1)",            AMBER),
         ("MCTS-Solver",       "Propaga provas matemáticas",           CORAL),
-        ("Numba (4 var.)",    "Kernels @njit  ·  ~13M iter/s",        FOREST),
+        ("Numba (4 var.)",    "Kernels @njit  ·  ~220 k iter/s",      FOREST),
     ]
     for i, (name, desc, col) in enumerate(variants):
         y = 1.80 + i * 0.58
@@ -737,7 +737,7 @@ def build():
     s = prs.slides.add_slide(blank)
     set_bg(s, WHITE)
     header(s, "Tree Reuse + Numba: Performance",
-           chip="03", subtitle="Duas optimizações ortogonais — ~1400× speedup combinado")
+           chip="03", subtitle="Duas optimizações ortogonais — ~44× speedup do kernel + reuse entre turnos")
 
     # Top-left — Tree Reuse explanation
     add_text(s, 0.5, 1.25, 4.5, 0.35,
@@ -780,12 +780,15 @@ def build():
 
     # Bar chart manually (using rectangles)
     # Labels live to the LEFT of bars (always readable); values to the RIGHT.
+    # Numbers measured on the project's own benchmark (Technical_Documentation
+    # notebook). Reuse does NOT increase raw iter/s — its benefit is described
+    # in the slide narrative below.
     bars = [
-        ("StandardUCT",         9_000,      TEAL_LT),
-        ("NumbaMCTS",           50_000,     TEAL),
-        ("FlatNumbaMCTS",       179_000,    DEEP),
-        ("FlatNumbaSolverMCTS", 168_000,    NAVY),
-        ("ReuseFlat (peak)",    13_000_000, AMBER),
+        ("StandardUCT",         5_000,    TEAL_LT),
+        ("NumbaMCTS",           30_000,   TEAL),
+        ("FlatNumbaMCTS",       220_000,  DEEP),
+        ("FlatNumbaSolverMCTS", 220_000,  NAVY),
+        ("ReuseFlat Solver",    220_000,  AMBER),
     ]
     import math
     bar_max = max(b[1] for b in bars)
@@ -823,7 +826,7 @@ def build():
     # Massive speedup callout
     add_rect(s, 0.5, 4.85, 4.5, 0.40, fill=AMBER)
     add_text(s, 0.5, 4.85, 4.5, 0.40,
-             "≈ 1400× speedup  vs  Python puro",
+             "≈ 44× speedup  vs  Python puro",
              size=13, bold=True, color=NAVY,
              align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE,
              font=HEADER_FONT)
@@ -1123,7 +1126,7 @@ def build():
     kpi_y = 1.25
     kpi_h = 1.45
     kpis = [
-        ("13 M",    "iter/s\n(FlatNumba)",        TEAL),
+        ("220 k",   "iter/s\n(FlatNumba)",        TEAL),
         ("44 %",    "generalização\n(ID3 GROUPED)", DEEP),
         ("52 %",    "win-rate vs\nSolver 100k",   AMBER),
         ("< 2 ms",  "inference ID3\npor jogada",  FOREST),
@@ -1179,7 +1182,7 @@ def build():
          AMBER,
          "03"),
         ("Performance Python insuficiente",
-         "Kernels Numba JIT em arrays planos  →  ~1400× speedup.",
+         "Kernels Numba JIT em arrays planos  →  ~44× speedup.",
          FOREST,
          "04"),
     ]
@@ -1232,7 +1235,7 @@ def build():
          [
              "MCTS-Solver com proof propagation",
              "Tree reuse com BFS compaction",
-             "Numba: ~13 M iter/s  ·  1400×",
+             "Numba: ~220 k iter/s  ·  ~44×",
              "~2 200 linhas de testes",
              "Pipeline reprodutível",
          ],

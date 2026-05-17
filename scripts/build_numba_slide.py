@@ -128,7 +128,7 @@ def build():
              "Numba JIT + FlatNumba",
              size=22, bold=True, color=NAVY, font=HEADER_FONT)
     add_text(s, 1.30, 0.62, 8.2, 0.28,
-             "From Python to native speed — ~1400× more state visits per second, "
+             "From Python to native speed — ~44× more state visits per second, "
              "without leaving Python",
              size=10, italic=True, color=GRAY)
     add_rect(s, 0.5, 0.97, 9.0, 0.015, fill=ICE_DK)
@@ -178,11 +178,14 @@ def build():
     ], size=10, bullet_color=AMBER)
 
     # ── Performance bar chart (log-scale, units: iter/s) ─────────────────────
+    # Numbers measured on the project's own benchmark (Technical_Documentation
+    # notebook + fresh re-run on the dev machine). Raw kernel throughput; reuse
+    # does NOT increase raw iter/s — its benefit is described in the lower strip.
     bars = [
-        ("StandardUCT",                "Python baseline",     9_000,      TEAL_LT),
-        ("NumbaMCTS",                  "Objects + JIT",       50_000,     TEAL),
-        ("FlatNumbaMCTS",              "Arrays + JIT",        179_000,    DEEP),
-        ("ReuseFlat (effective)",      "Arrays + JIT + reuse", 13_000_000, AMBER),
+        ("StandardUCT",                "Python baseline",      5_000,    TEAL_LT),
+        ("NumbaMCTS",                  "Objects + JIT",       30_000,    TEAL),
+        ("FlatNumbaMCTS",              "Arrays + JIT",       220_000,    DEEP),
+        ("ReuseFlat Solver",           "Arrays + JIT + reuse", 220_000,  AMBER),
     ]
     chart_y0  = 3.55
     label_x   = 0.50
@@ -227,8 +230,8 @@ def build():
              "SPEEDUP", size=9, bold=True, color=AMBER,
              align=PP_ALIGN.CENTER)
     add_text(s, 7.85, 3.85, 1.65, 0.60,
-             "≈ 1400×",
-             size=28, bold=True, color=WHITE, font=HEADER_FONT,
+             "≈ 44×",
+             size=32, bold=True, color=WHITE, font=HEADER_FONT,
              align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
     add_text(s, 7.85, 4.45, 1.65, 0.25,
              "vs pure Python", size=8, italic=True, color=TEAL_LT,
@@ -238,24 +241,24 @@ def build():
     strip_y = 4.95
     strip_h = 0.50
 
-    # Left half — raw vs effective distinction
+    # Left half — what tree reuse actually buys you (since raw iter/s is unchanged)
     add_rect(s, 0.5, strip_y, 5.70, strip_h, fill=ICE)
     add_rect(s, 0.5, strip_y, 0.10, strip_h, fill=DEEP)
     add_text(s, 0.70, strip_y + 0.04, 5.40, 0.22,
-             "Raw kernel  vs  effective throughput",
+             "What tree reuse really buys",
              size=10, bold=True, color=NAVY)
     add_text(s, 0.70, strip_y + 0.25, 5.40, 0.22,
-             "Kernel sustains ~168 k iter/s alone; the 13 M figure counts "
-             "inherited visits leveraged via tree reuse.",
+             "Raw iter/s ~ unchanged; reuse compounds search effort across "
+             "turns (~12% inherited) — same kernel, deeper effective tree.",
              size=9, color=SLATE, italic=True)
 
-    # Right half — real-world impact
+    # Right half — solver early termination
     add_rect(s, 6.30, strip_y, 3.20, strip_h, fill=ICE)
     add_rect(s, 6.30, strip_y, 0.10, strip_h, fill=FOREST)
     add_text(s, 6.50, strip_y + 0.04, 2.95, 0.22,
-             "Practical impact", size=10, bold=True, color=NAVY)
+             "Solver early exit", size=10, bold=True, color=NAVY)
     add_text(s, 6.50, strip_y + 0.25, 2.95, 0.22,
-             "Competitive moves in ~50 ms  ·  real-time GUI play.",
+             "Proven positions return in < 1 ms via AND/OR propagation.",
              size=9, color=SLATE, italic=True)
 
     # ── Save ─────────────────────────────────────────────────────────────────
